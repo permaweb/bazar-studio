@@ -27,7 +27,7 @@ export function CodeSnippetModal({ title, description, code, open, onClose }: Co
 			<S.Container>
 				<S.Description>
 					{description}{' '}
-					<a href="http://localhost:4000/#/docs/aos/commands" target="_blank" rel="noopener noreferrer">
+					<a href="#/docs/aos/commands" target="_blank" rel="noopener noreferrer">
 						View full AOS documentation
 					</a>
 				</S.Description>
