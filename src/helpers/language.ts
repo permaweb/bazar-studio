@@ -220,6 +220,8 @@ export const language = {
 		removeAsset: `Remove asset`,
 		removeAvatar: `Remove avatar`,
 		removeBanner: `Remove banner`,
+		removeCollection: `Remove Collection`,
+		removeCollectionConfirm: `Are you sure you want to remove this collection? This action cannot be undone.`,
 		removeFile: `Remove file`,
 		renderer: `Renderer`,
 		rendererInfo: `This name will be applied to each asset indicating to gateways and applcations how to render the asset content.`,

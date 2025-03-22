@@ -146,6 +146,20 @@ export const MFetchWrapper = styled.div`
 	}
 `;
 
+export const MError = styled.div`
+	margin: 16px 0;
+	padding: 8px 16px;
+	background-color: ${({ theme }) => theme.colors.error};
+	border-radius: 4px;
+
+	p {
+		color: ${({ theme }) => theme.colors.white};
+		font-size: 14px;
+		text-align: center;
+		margin: 0;
+	}
+`;
+
 export const EmptyContainer = styled.div`
 	height: 100%;
 	width: 100%;
