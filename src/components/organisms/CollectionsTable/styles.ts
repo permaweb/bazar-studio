@@ -160,6 +160,37 @@ export const MError = styled.div`
 	}
 `;
 
+export const MSection = styled.div`
+	margin-top: 20px;
+
+	p {
+		margin-bottom: 10px;
+		color: var(--text-primary);
+	}
+`;
+
+export const CodeBlock = styled.div`
+	background: var(--background-secondary);
+	border-radius: 4px;
+	padding: 15px;
+	margin: 10px 0;
+	position: relative;
+
+	code {
+		display: block;
+		color: var(--text-primary);
+		font-family: monospace;
+		white-space: pre;
+		margin-bottom: 10px;
+	}
+
+	button {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+	}
+`;
+
 export const EmptyContainer = styled.div`
 	height: 100%;
 	width: 100%;

@@ -13,6 +13,7 @@ import { IconButton } from 'components/atoms/IconButton';
 import { Loader } from 'components/atoms/Loader';
 import { Panel } from 'components/molecules/Panel';
 import { Table } from 'components/molecules/Table';
+import { AOS_SNIPPETS } from 'helpers/aos-snippets';
 import { AO, ASSETS, PAGINATORS, REDIRECTS, URLS } from 'helpers/config';
 import { AlignType, CollectionType } from 'helpers/types';
 import { checkValidAddress, formatAddress } from 'helpers/utils';
@@ -21,6 +22,8 @@ import { useLanguageProvider } from 'providers/LanguageProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
 import { CloseHandler } from 'wrappers/CloseHandler';
+
+import { CodeSnippetModal } from '../../molecules/CodeSnippetModal';
 
 import * as S from './styles';
 
@@ -47,6 +50,8 @@ function CollectionDropdown(props: { id: string; title: string }) {
 
 	const [loading, setLoading] = React.useState<boolean>(false);
 	const [listingLog, setListingLog] = React.useState<string | null>('');
+
+	const [showAOSSnippet, setShowAOSSnippet] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		(async function () {
@@ -279,6 +284,9 @@ function CollectionDropdown(props: { id: string; title: string }) {
 							<S.LI onClick={() => setRemoveConfirmOpen(true)} disabled={false}>
 								{language.removeCollection}
 							</S.LI>
+							<S.LI onClick={() => setShowAOSSnippet('removeCollection')} disabled={false}>
+								View AOS Commands
+							</S.LI>
 						</S.DDropdown>
 					)}
 				</S.DWrapper>
@@ -301,6 +309,33 @@ function CollectionDropdown(props: { id: string; title: string }) {
 									<p>{error}</p>
 								</S.MError>
 							)}
+							<S.MSection>
+								<p>{language.removeCollectionAOS}</p>
+								<S.CodeBlock>
+									<code>{`Send({
+  Target = "COLLECTIONS_REGISTRY",
+  Action = "Remove-Collection",
+  Tags = {
+    CollectionId = "${props.id}"
+  }
+})`}</code>
+									<Button
+										type={'primary'}
+										label={language.copy}
+										handlePress={() => {
+											navigator.clipboard.writeText(`Send({
+  Target = "COLLECTIONS_REGISTRY",
+  Action = "Remove-Collection",
+  Tags = {
+    CollectionId = "${props.id}"
+  }
+})`);
+										}}
+										noMinWidth
+									/>
+								</S.CodeBlock>
+								<p>{language.removeCollectionPermissions}</p>
+							</S.MSection>
 						</S.MBody>
 						<S.MFooter>
 							<S.MActions>
@@ -326,6 +361,9 @@ function CollectionDropdown(props: { id: string; title: string }) {
 						</S.MFooter>
 					</S.MCWrapper>
 				</Panel>
+			)}
+			{showAOSSnippet && (
+				<CodeSnippetModal {...AOS_SNIPPETS[showAOSSnippet]} open={true} onClose={() => setShowAOSSnippet(null)} />
 			)}
 		</>
 	);
