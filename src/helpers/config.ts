@@ -262,7 +262,10 @@ export const CONTENT_TYPES = {
 	audio: 'audio/mpeg',
 };
 
-export const AR_WALLETS = [{ type: WalletEnum.wander, logo: ASSETS.wallets.wander }];
+export const AR_WALLETS = [
+	{ type: WalletEnum.wander, logo: ASSETS.wallets.wander },
+	{ type: WalletEnum.beacon, logo: ASSETS.wallets.arweaveApp },
+];
 
 export const WALLET_PERMISSIONS = ['ACCESS_ADDRESS', 'ACCESS_PUBLIC_KEY', 'SIGN_TRANSACTION', 'DISPATCH', 'SIGNATURE'];
 
