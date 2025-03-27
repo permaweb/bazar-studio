@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { HashRouter } from 'react-router-dom';
+import { AOSyncProvider } from '@vela-ventures/aosync-sdk-react';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { App } from 'app';
@@ -17,14 +18,24 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 		<PersistGate loading={<Loader />} persistor={persistor}>
 			<CustomThemeProvider>
 				<LanguageProvider>
-					<ArweaveProvider>
-						<PermawebProvider>
-							<HashRouter>
-								<GlobalStyle />
-								<App />
-							</HashRouter>
-						</PermawebProvider>
-					</ArweaveProvider>
+					<AOSyncProvider
+						gatewayConfig={{
+							host: 'arweave.net',
+							port: 443,
+							protocol: 'https',
+						}}
+						appInfo={{ name: 'Bazar studio' }}
+						muUrl="https://mu.ao-testnet.xyz"
+					>
+						<ArweaveProvider>
+							<PermawebProvider>
+								<HashRouter>
+									<GlobalStyle />
+									<App />
+								</HashRouter>
+							</PermawebProvider>
+						</ArweaveProvider>
+					</AOSyncProvider>
 				</LanguageProvider>
 			</CustomThemeProvider>
 		</PersistGate>

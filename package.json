@@ -28,6 +28,7 @@
 		"@stripe/react-stripe-js": "^2.4.0",
 		"@stripe/stripe-js": "^2.4.0",
 		"@types/react-router-dom": "^5.3.3",
+		"@vela-ventures/aosync-sdk-react": "^1.0.19",
 		"arbundles": "^0.10.1",
 		"arweave-wallet-connector": "^1.0.2",
 		"html-react-parser": "^5.2.2",
