@@ -320,7 +320,6 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	async function checkAOsyncConnection() {
 		if (localStorage.getItem('walletType') === WalletEnum.beacon && !isAOsyncConnected) {
 			try {
-				await global.window?.arweaveWallet?.disconnect();
 				setWallet(null);
 				setWalletAddress(null);
 				setProfile(null);
