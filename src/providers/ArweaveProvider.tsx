@@ -335,11 +335,14 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 				if (localItem !== WalletEnum.beacon) {
 					await connectAOsync();
 				}
-				setWalletAddress(await aosyncGetAddress());
-				setWalletType(WalletEnum.beacon);
-				setWalletModalVisible(false);
-				localStorage.setItem('walletType', WalletEnum.beacon);
-				setWallet(window.arweaveWallet);
+				const walletAddress = await aosyncGetAddress();
+				if (walletAddress) {
+					setWalletAddress(walletAddress);
+					setWalletType(WalletEnum.beacon);
+					setWalletModalVisible(false);
+					localStorage.setItem('walletType', WalletEnum.beacon);
+					setWallet(window.arweaveWallet);
+				}
 			} catch (e: any) {
 				console.error(e);
 			}
