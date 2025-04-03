@@ -8,6 +8,7 @@ import arrowNextSVG from 'assets/arrow-next.svg';
 import arrowPreviousSVG from 'assets/arrow-previous.svg';
 import asset from 'assets/asset.svg';
 import bazar from 'assets/bazar.svg';
+import beaconLogo from 'assets/beacon-logo.svg';
 import checkmark from 'assets/checkmark.svg';
 import close from 'assets/close.svg';
 import collections from 'assets/collections.svg';
@@ -115,6 +116,7 @@ export const ASSETS = {
 		arweaveApp: arweaveApp,
 		othent: othent,
 		wander: wander,
+		beacon: beaconLogo,
 	},
 	x: x,
 };
@@ -262,7 +264,10 @@ export const CONTENT_TYPES = {
 	audio: 'audio/mpeg',
 };
 
-export const AR_WALLETS = [{ type: WalletEnum.wander, logo: ASSETS.wallets.wander }];
+export const AR_WALLETS = [
+	{ type: WalletEnum.wander, logo: ASSETS.wallets.wander },
+	{ type: WalletEnum.beacon, logo: ASSETS.wallets.beacon },
+];
 
 export const WALLET_PERMISSIONS = ['ACCESS_ADDRESS', 'ACCESS_PUBLIC_KEY', 'SIGN_TRANSACTION', 'DISPATCH', 'SIGNATURE'];
 
