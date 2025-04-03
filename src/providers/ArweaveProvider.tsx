@@ -110,7 +110,12 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 	const [profile, setProfile] = React.useState<ProfileHeaderType | null>(null);
 	const [toggleProfileUpdate, setToggleProfileUpdate] = React.useState<boolean>(false);
-	const { isConnected: isAOsyncConnected, connect: connectAOsync, getAddress: aosyncGetAddress } = useAOsyncWallet();
+	const {
+		isConnected: isAOsyncConnected,
+		connect: connectAOsync,
+		getAddress: aosyncGetAddress,
+		isSessionActive: aoSyncSessionActive,
+	} = useAOsyncWallet();
 
 	React.useEffect(() => {
 		(async function () {
@@ -335,8 +340,8 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 				if (localItem !== WalletEnum.beacon) {
 					await connectAOsync();
 				}
-				const walletAddress = await aosyncGetAddress();
-				if (walletAddress) {
+				if (aoSyncSessionActive || localItem !== WalletEnum.beacon) {
+					const walletAddress = await aosyncGetAddress();
 					setWalletAddress(walletAddress);
 					setWalletType(WalletEnum.beacon);
 					setWalletModalVisible(false);
