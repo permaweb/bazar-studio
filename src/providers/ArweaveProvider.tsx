@@ -150,7 +150,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 				}
 			}
 		})();
-	}, [wallet, walletAddress, walletType]);
+	}, [walletAddress]);
 
 	React.useEffect(() => {
 		(async function () {

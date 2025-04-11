@@ -275,16 +275,43 @@ export default function CollectionsTable(props: {
 			if (arProvider.profile && arProvider.profile.id) {
 				setLoading(true);
 				try {
-					const listingLog = await readHandler({
-						processId: AO.collectionsRegistry,
-						action: 'Get-Collections-By-User',
-						tags: [{ name: 'Creator', value: arProvider.profile.id }],
-					});
+					const modeKey = 'Bazar-Studio-fetchModeTTL';
+					const currentTime = Date.now();
+					let fetchMode;
 
-					if (listingLog && listingLog.Collections && listingLog.Collections.length) {
-						setIdCount(listingLog.Collections.length);
+					const storedData = localStorage.getItem(modeKey);
+					if (storedData) {
+						try {
+							const parsedData = JSON.parse(storedData);
+							if (currentTime - parsedData.timestamp < 60 * 1000) {
+								fetchMode = 'compute';
+							} else {
+								fetchMode = 'now';
+								localStorage.setItem(modeKey, JSON.stringify({ timestamp: currentTime }));
+							}
+						} catch (error) {
+							fetchMode = 'now';
+							localStorage.setItem(modeKey, JSON.stringify({ timestamp: currentTime }));
+						}
+					} else {
+						fetchMode = 'now';
+						localStorage.setItem(modeKey, JSON.stringify({ timestamp: currentTime }));
+					}
+
+					const listingLog = await (
+						await fetch(`https://router-1.forward.computer/${AO.collectionsRegistry}~process@1.0/${fetchMode}/cache`)
+					).json();
+
+					let filteredCollections = [...listingLog.Collections];
+					const creatorCollectionIds = [...listingLog.CollectionsByUser[arProvider.profile.id]];
+					filteredCollections = filteredCollections.filter((collection) =>
+						creatorCollectionIds.includes(collection.Id)
+					);
+
+					if (filteredCollections?.length) {
+						setIdCount(filteredCollections.length);
 						setCollections(
-							listingLog.Collections.map((collection: any) => {
+							filteredCollections.map((collection: any) => {
 								return {
 									id: collection.Id,
 									title: collection.Name,
