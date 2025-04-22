@@ -4,8 +4,10 @@ import { randomBytes } from 'crypto-browserify';
 import Arweave from 'arweave';
 import { bufferTob64Url } from 'arweave/node/lib/utils';
 import { ArconnectSigner } from 'arbundles';
+import { connect, createSigner } from '@permaweb/aoconnect';
+import PermawebLibs from '@permaweb/libs';
 
-import { getProfileByWalletAddress, readHandler } from 'api';
+import { readHandler } from 'api';
 
 import { Modal } from 'components/molecules/Modal';
 import { AO, API_CONFIG, AR_WALLETS, GATEWAYS, REDIRECTS, WALLET_PERMISSIONS } from 'helpers/config';
@@ -18,6 +20,7 @@ import { useLanguageProvider } from 'providers/LanguageProvider';
 import * as S from './styles';
 
 interface ArweaveContextState {
+	libs: any;
 	wallets: { type: WalletEnum; logo: string }[];
 	wallet: any;
 	walletAddress: string | null;
@@ -42,6 +45,7 @@ interface ArweaveProviderProps {
 }
 
 const DEFAULT_CONTEXT = {
+	libs: null,
 	wallets: [],
 	wallet: null,
 	walletAddress: null,
@@ -94,6 +98,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 	const wallets = AR_WALLETS;
 
+	const [libs, setLibs] = React.useState<any>(null);
 	const [wallet, setWallet] = React.useState<any>(null);
 	const [walletType, setWalletType] = React.useState<WalletEnum | null>(null);
 	const [walletModalVisible, setWalletModalVisible] = React.useState<boolean>(false);
@@ -129,6 +134,16 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	}, []);
 
 	React.useEffect(() => {
+		const deps = {
+			ao: connect({ MODE: 'legacy' }),
+			arweave: Arweave.init({}),
+			signer: wallet ? createSigner(wallet) : null,
+		};
+
+		setLibs(PermawebLibs.init(deps));
+	}, [wallet]);
+
+	React.useEffect(() => {
 		(async function () {
 			if (walletAddress) {
 				try {
@@ -144,7 +159,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 		(async function () {
 			if (wallet && walletAddress) {
 				try {
-					setProfile(await getProfileByWalletAddress({ address: walletAddress }));
+					setProfile(await libs.getProfileByWalletAddress(walletAddress));
 				} catch (e: any) {
 					console.error(e);
 				}
@@ -163,7 +178,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 					while (!changeDetected && tries < maxTries) {
 						try {
 							const existingProfile = profile;
-							const newProfile = await getProfileByWalletAddress({ address: walletAddress });
+							const newProfile = await libs.getProfileByWalletAddress(walletAddress);
 
 							if (JSON.stringify(existingProfile) !== JSON.stringify(newProfile)) {
 								setProfile(newProfile);
@@ -355,6 +370,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 			)}
 			<ARContext.Provider
 				value={{
+					libs,
 					wallet,
 					walletAddress,
 					walletType,

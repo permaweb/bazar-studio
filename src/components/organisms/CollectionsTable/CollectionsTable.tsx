@@ -272,46 +272,23 @@ export default function CollectionsTable(props: {
 
 	React.useEffect(() => {
 		(async function () {
-			if (arProvider.profile && arProvider.profile.id) {
+			if (arProvider.profile?.id && arProvider.profile?.collections) {
 				setLoading(true);
 				try {
-					const modeKey = 'Bazar-Studio-fetchModeTTL';
-					const currentTime = Date.now();
-					let fetchMode;
+					const fetchedCollections = [];
 
-					const storedData = localStorage.getItem(modeKey);
-					if (storedData) {
-						try {
-							const parsedData = JSON.parse(storedData);
-							if (currentTime - parsedData.timestamp < 60 * 1000) {
-								fetchMode = 'compute';
-							} else {
-								fetchMode = 'now';
-								localStorage.setItem(modeKey, JSON.stringify({ timestamp: currentTime }));
-							}
-						} catch (error) {
-							fetchMode = 'now';
-							localStorage.setItem(modeKey, JSON.stringify({ timestamp: currentTime }));
-						}
-					} else {
-						fetchMode = 'now';
-						localStorage.setItem(modeKey, JSON.stringify({ timestamp: currentTime }));
+					for (const id of arProvider.profile.collections) {
+						const collection = await arProvider.libs.readProcess({
+							processId: id,
+							action: 'Info',
+						});
+						fetchedCollections.push(collection);
 					}
 
-					const listingLog = await (
-						await fetch(`https://router-1.forward.computer/${AO.collectionsRegistry}~process@1.0/${fetchMode}/cache`)
-					).json();
-
-					let filteredCollections = [...listingLog.Collections];
-					const creatorCollectionIds = [...listingLog.CollectionsByUser[arProvider.profile.id]];
-					filteredCollections = filteredCollections.filter((collection) =>
-						creatorCollectionIds.includes(collection.Id)
-					);
-
-					if (filteredCollections?.length) {
-						setIdCount(filteredCollections.length);
+					if (fetchedCollections?.length) {
+						setIdCount(fetchedCollections.length);
 						setCollections(
-							filteredCollections.map((collection: any) => {
+							fetchedCollections.map((collection: any) => {
 								return {
 									id: collection.Id,
 									title: collection.Name,

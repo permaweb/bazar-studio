@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReactSVG } from 'react-svg';
 
 import { messageResult } from 'api';
-import { getAssetIdsByUser, getGQLData } from 'gql';
+import { getGQLData } from 'gql';
 
 import { Button } from 'components/atoms/Button';
 import { Checkbox } from 'components/atoms/Checkbox';
@@ -119,11 +119,12 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 
 	React.useEffect(() => {
 		(async function () {
-			if (arProvider.walletAddress) {
+			if (arProvider.walletAddress && arProvider.profile?.id) {
 				setLoading(true);
 				try {
 					const groups: GroupIndexType = [];
-					const ids = await getAssetIdsByUser({ address: arProvider.walletAddress });
+					const ids = (arProvider.profile as any).assets.map((asset) => asset.id);
+
 					if (ids && ids.length) {
 						setIdCount(ids.length);
 						const groupIndex = new Map(groups.map((group: any) => [group.index, group.ids]));
@@ -161,7 +162,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 				}
 			}
 		})();
-	}, [arProvider.walletAddress, uploadReducer.uploadActive, toggleUpdate]);
+	}, [arProvider.walletAddress, arProvider.profile, uploadReducer.uploadActive, toggleUpdate]);
 
 	React.useEffect(() => {
 		(async function () {
