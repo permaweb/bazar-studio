@@ -148,7 +148,7 @@ export enum WalletEnum {
 
 export type TagType = { name: string; value: string };
 
-export type ButtonType = 'primary' | 'alt1' | 'alt2';
+export type ButtonType = 'primary' | 'alt1' | 'alt2' | 'danger';
 export type RefType = { current: HTMLElement };
 export type DateType = 'iso' | 'epoch';
 export type NavPathType = { path: string; basePath?: string; label: string; icon: string };

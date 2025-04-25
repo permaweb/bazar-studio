@@ -32,6 +32,16 @@ export const docsOrder = [
 		],
 	},
 	{
+		name: 'AOS Integration',
+		path: 'aos',
+		children: [
+			{
+				name: 'Commands Reference',
+				path: 'commands',
+			},
+		],
+	},
+	{
 		name: 'Resources',
 		path: 'resources',
 		children: [

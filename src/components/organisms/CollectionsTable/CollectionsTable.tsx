@@ -28,12 +28,16 @@ const DENOMINATION = Math.pow(10, 12);
 
 function CollectionDropdown(props: { id: string; title: string }) {
 	const arProvider = useArweaveProvider();
+	const dispatch = useDispatch();
 
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
 
 	const [collection, setCollection] = React.useState<any>(null);
 	const [fetchingcCollection, setFetchingCollection] = React.useState<any>(null);
+	const [removeConfirmOpen, setRemoveConfirmOpen] = React.useState<boolean>(false);
+	const [removing, setRemoving] = React.useState<boolean>(false);
+	const [error, setError] = React.useState<string | null>(null);
 
 	const [price, setPrice] = React.useState<number>(0);
 	const [percentage, setPercentage] = React.useState<number>(100);
@@ -62,6 +66,37 @@ function CollectionDropdown(props: { id: string; title: string }) {
 			}
 		})();
 	}, [props.id, listingModalOpen]);
+
+	async function handleRemoveCollection() {
+		if (!arProvider.wallet || !arProvider.profile || !arProvider.profile.id) {
+			setError(language.connectToContinue);
+			return;
+		}
+
+		setRemoving(true);
+		setError(null);
+		try {
+			const response = await readHandler({
+				processId: AO.collectionsRegistry,
+				action: 'Remove-Collection',
+				tags: [{ name: 'CollectionId', value: props.id }],
+			});
+
+			if (response?.Status === 'Error') {
+				setError(response.Message || language.errorOccurred);
+				return;
+			}
+
+			// Force a refresh of the collections list
+			dispatch({ type: 'TOGGLE_UPLOAD_ACTIVE' });
+			setRemoveConfirmOpen(false);
+		} catch (e: any) {
+			console.error(e);
+			setError(e.message || language.errorOccurred);
+		} finally {
+			setRemoving(false);
+		}
+	}
 
 	async function handleSubmit() {
 		if (
@@ -241,11 +276,94 @@ function CollectionDropdown(props: { id: string; title: string }) {
 							<S.LI onClick={() => setListingModalOpen(true)} disabled={false}>
 								{language.createListings}
 							</S.LI>
+							<S.LI onClick={() => setRemoveConfirmOpen(true)} disabled={false}>
+								{language.removeCollection}
+							</S.LI>
 						</S.DDropdown>
 					)}
 				</S.DWrapper>
 			</CloseHandler>
 			{listingModalOpen && getListingModal()}
+			{removeConfirmOpen && (
+				<Panel
+					open={true}
+					width={400}
+					header={language.removeCollection}
+					handleClose={() => setRemoveConfirmOpen(false)}
+				>
+					<S.MCWrapper>
+						<S.MBody>
+							<S.MHeader>
+								<p>{language.removeCollectionConfirm}</p>
+							</S.MHeader>
+							{error && (
+								<S.MError>
+									<p>{error}</p>
+								</S.MError>
+							)}
+							<S.MSection>
+								<p>{language.removeCollectionAOS}</p>
+								<S.CodeBlock>
+									<code>{`Send({
+  Target = "COLLECTIONS_REGISTRY",
+  Action = "Remove-Collection",
+  Tags = {
+    CollectionId = "${props.id}"
+  }
+})`}</code>
+									<button
+										onClick={(event) => {
+											navigator.clipboard.writeText(`Send({
+  Target = "COLLECTIONS_REGISTRY",
+  Action = "Remove-Collection",
+  Tags = {
+    CollectionId = "${props.id}"
+  }
+})`);
+											const btn = event?.target as HTMLButtonElement;
+											const originalText = btn.textContent;
+											btn.textContent = 'Copied!';
+											setTimeout(() => {
+												btn.textContent = originalText;
+											}, 2000);
+										}}
+									>
+										Copy
+									</button>
+								</S.CodeBlock>
+								<p>
+									{language.removeCollectionPermissions}{' '}
+									<a href="#/docs/aos/commands" target="_blank" rel="noopener noreferrer">
+										View full AOS documentation
+									</a>
+								</p>
+							</S.MSection>
+						</S.MBody>
+						<S.MFooter>
+							<S.MActions>
+								<Button
+									type={'primary'}
+									label={language.cancel}
+									handlePress={() => {
+										setRemoveConfirmOpen(false);
+										setError(null);
+									}}
+									disabled={removing}
+									noMinWidth
+								/>
+								<Button
+									type={'danger'}
+									label={language.remove}
+									handlePress={handleRemoveCollection}
+									disabled={removing}
+									loading={removing}
+									noMinWidth
+								/>
+							</S.MActions>
+						</S.MFooter>
+					</S.MCWrapper>
+				</Panel>
+			)}
 		</>
 	);
 }
