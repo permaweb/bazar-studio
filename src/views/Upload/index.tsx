@@ -101,6 +101,7 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								thumbnail: uploadReducer.data.thumbnail,
 								banner: uploadReducer.data.banner,
+								skipRegistry: true, // TODO: REMOVE
 							},
 							(status: string) => setResponse(status)
 						);
@@ -212,7 +213,7 @@ export default function Upload() {
 					const asset: any = {
 						name: assetName,
 						description: assetDescription,
-						topics: [...uploadReducer.data.topics, 'permabrawl'],
+						topics: uploadReducer.data.topics,
 						creator: arProvider.profile.id,
 						data: buffer,
 						contentType: contentType,
@@ -245,6 +246,8 @@ export default function Upload() {
 
 	function handleClear() {
 		setResponse(null);
+		setUploadLog('');
+		setErrorLog('');
 		dispatch(uploadActions.clearUpload());
 	}
 

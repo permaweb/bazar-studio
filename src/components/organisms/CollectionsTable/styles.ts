@@ -146,6 +146,68 @@ export const MFetchWrapper = styled.div`
 	}
 `;
 
+export const MError = styled.div`
+	margin: 16px 0;
+	padding: 8px 16px;
+	background-color: ${({ theme }) => theme.colors.error};
+	border-radius: 4px;
+
+	p {
+		color: ${({ theme }) => theme.colors.white};
+		font-size: 14px;
+		text-align: center;
+		margin: 0;
+	}
+`;
+
+export const MSection = styled.div`
+	margin-top: 20px;
+
+	p {
+		margin-bottom: 10px;
+		color: var(--text-primary);
+	}
+`;
+
+export const CodeBlock = styled.div`
+	background: ${(props) => props.theme.colors.container.alt1.background};
+	border-radius: 4px;
+	padding: 16px;
+	margin: 24px 0;
+	position: relative;
+	border: 1px solid ${(props) => props.theme.colors.border.primary};
+
+	code {
+		display: block;
+		color: ${(props) => props.theme.colors.font.primary};
+		font-family: ${(props) => props.theme.typography.family.alt1};
+		white-space: pre;
+		margin-bottom: 0;
+		line-height: 1.5;
+		font-size: ${(props) => props.theme.typography.size.xSmall};
+	}
+
+	button {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		background: transparent;
+		color: ${(props) => props.theme.colors.font.primary};
+		border: 1px solid ${(props) => props.theme.colors.border.primary};
+		border-radius: 3px;
+		padding: 4px 8px;
+		font-size: ${(props) => props.theme.typography.size.xxSmall};
+		cursor: pointer;
+		transition: all 0.2s;
+		font-family: inherit;
+
+		&:hover {
+			background: ${(props) => props.theme.colors.container.primary.active};
+			border-color: ${(props) => props.theme.colors.border.alt1};
+		}
+	}
+`;
+
 export const EmptyContainer = styled.div`
 	height: 100%;
 	width: 100%;
