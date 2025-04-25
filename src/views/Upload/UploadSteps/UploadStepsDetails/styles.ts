@@ -215,6 +215,7 @@ export const ROption = styled.button<{ active: boolean; disabled: boolean }>`
 		${(props) => (props.active ? props.theme.colors.button.alt1.border : props.theme.colors.button.primary.border)};
 	border-radius: ${STYLING.dimensions.radius.primary};
 	padding: 15px;
+	position: relative;
 	&:hover {
 		background: ${(props) => props.theme.colors.button.alt1.active.background};
 		border: 1px solid ${(props) => props.theme.colors.button.alt1.active.border};
@@ -252,4 +253,15 @@ export const ROption = styled.button<{ active: boolean; disabled: boolean }>`
 			color: ${(props) => props.theme.colors.button.primary.disabled.color} !important;
 		}
 	}
+`;
+
+export const RIncompatible = styled.div`
+	margin-top: 7.5px;
+	padding: 5px 10px;
+	background-color: ${(props) => props.theme.colors.warning + '33'}; /* 20% opacity */
+	border-radius: ${STYLING.dimensions.radius.alt2};
+	font-size: ${(props) => props.theme.typography.size.xxSmall} !important;
+	font-weight: ${(props) => props.theme.typography.weight.medium} !important;
+	color: ${(props) => props.theme.colors.warning} !important;
+	text-align: left;
 `;
