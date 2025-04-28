@@ -158,6 +158,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	React.useEffect(() => {
 		(async function () {
 			if (wallet && walletAddress) {
+				await new Promise((r) => setTimeout(r, 2000));
 				try {
 					setProfile(await libs.getProfileByWalletAddress(walletAddress));
 				} catch (e: any) {
@@ -184,7 +185,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 								setProfile(newProfile);
 								changeDetected = true;
 							} else {
-								await new Promise((resolve) => setTimeout(resolve, 1000));
+								await new Promise((resolve) => setTimeout(resolve, 2000));
 								tries++;
 							}
 						} catch (error) {
