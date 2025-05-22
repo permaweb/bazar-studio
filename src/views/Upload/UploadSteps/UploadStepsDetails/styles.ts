@@ -256,12 +256,12 @@ export const ROption = styled.button<{ active: boolean; disabled: boolean }>`
 `;
 
 export const RIncompatible = styled.div`
-	margin-top: 7.5px;
 	padding: 5px 10px;
-	background-color: ${(props) => props.theme.colors.warning + '33'}; /* 20% opacity */
+	margin: 7.5px 0 0 0;
 	border-radius: ${STYLING.dimensions.radius.alt2};
 	font-size: ${(props) => props.theme.typography.size.xxSmall} !important;
 	font-weight: ${(props) => props.theme.typography.weight.medium} !important;
-	color: ${(props) => props.theme.colors.warning} !important;
+	background: ${(props) => props.theme.colors.warning} !important;
+	color: ${(props) => props.theme.colors.font.light1} !important;
 	text-align: left;
 `;

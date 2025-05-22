@@ -101,7 +101,8 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								thumbnail: uploadReducer.data.thumbnail,
 								banner: uploadReducer.data.banner,
-								skipRegistry: true, // TODO: REMOVE
+								skipRegistry: true, // TODO: REMOVE,
+								skipActivity: false,
 							},
 							(status: string) => setResponse(status)
 						);
@@ -125,6 +126,16 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								updateType: 'Add',
 							});
+
+							setResponse('Adding collection to profile...');
+
+							const updatedCollections = [...(arProvider.profile.collections ?? []), collectionId];
+							const profileUpdateResponse = await permawebProvider.libs.updateZone(
+								{ Collections: updatedCollections },
+								arProvider.profile.id,
+								arProvider.wallet
+							);
+							console.log(`Profile update: ${profileUpdateResponse}`);
 
 							if (updateAssetsResponse) {
 								setResponse(`${language.collectionCreated}!`);

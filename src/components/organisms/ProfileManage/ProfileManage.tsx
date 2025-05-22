@@ -137,7 +137,7 @@ export default function ProfileManage(props: IProps) {
 						});
 					}
 				} else {
-					const aos = connect();
+					const aos = connect({ MODE: 'legacy' });
 
 					let processSrc = null;
 					try {

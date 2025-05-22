@@ -10,7 +10,7 @@ import { FormField } from 'components/atoms/FormField';
 import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { CollectionsTable } from 'components/organisms/CollectionsTable';
-import { ASSETS, CONTENT_TYPES, DEFAULT_ASSET_TOPICS, GATEWAYS, RENDERERS } from 'helpers/config';
+import { ASSETS, DEFAULT_ASSET_TOPICS, GATEWAYS, RENDERERS } from 'helpers/config';
 import { RendererType, ValidationType } from 'helpers/types';
 import { formatRequiredField } from 'helpers/utils';
 import { useLanguageProvider } from 'providers/LanguageProvider';
@@ -205,8 +205,6 @@ export default function UploadStepsDetails() {
 		if (!uploadReducer.data.contentList || uploadReducer.data.contentList.length === 0) {
 			return true;
 		}
-
-		const rendererContentType = rendererOption.contentType;
 
 		for (const file of uploadReducer.data.contentList) {
 			const fileType = file.file.type;

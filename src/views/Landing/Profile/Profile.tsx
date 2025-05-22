@@ -2,8 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ReactSVG } from 'react-svg';
 
-import { getProfile } from 'api';
-
 import { Button } from 'components/atoms/Button';
 import { Loader } from 'components/atoms/Loader';
 import { Modal } from 'components/molecules/Modal';
@@ -51,7 +49,7 @@ export default function Profile(props: { address: string }) {
 			if (props.address && checkValidAddress(props.address)) {
 				setLoading(true);
 				try {
-					const currentProfile = await getProfile({ address: props.address });
+					const currentProfile = await arProvider.libs.getProfileByWalletAddress(props.address);
 					setFullProfile(currentProfile);
 				} catch (e: any) {
 					console.error(e);
@@ -59,11 +57,11 @@ export default function Profile(props: { address: string }) {
 				setLoading(false);
 			}
 		})();
-	}, [props.address, arProvider.profile]);
+	}, [props.address]);
 
 	function getAvatar() {
-		if (fullProfile && fullProfile.avatar && checkValidAddress(fullProfile.avatar))
-			return <img src={getTxEndpoint(fullProfile.avatar)} />;
+		if (fullProfile && fullProfile.thumbnail && checkValidAddress(fullProfile.thumbnail))
+			return <img src={getTxEndpoint(fullProfile.thumbnail)} />;
 		return <ReactSVG src={ASSETS.user} />;
 	}
 

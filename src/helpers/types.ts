@@ -278,8 +278,11 @@ export type AOProfileType = {
 	displayName: string | null;
 	username: string | null;
 	bio: string | null;
-	avatar: string | null;
+	avatar?: string | null;
+	thumbnail?: string | null;
 	banner: string | null;
+	collections?: string[];
+	assets?: string[];
 };
 
 export type ProfileHeaderType = AOProfileType;

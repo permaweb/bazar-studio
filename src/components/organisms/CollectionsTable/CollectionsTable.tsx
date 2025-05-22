@@ -18,6 +18,7 @@ import { AlignType, CollectionType } from 'helpers/types';
 import { checkValidAddress, formatAddress } from 'helpers/utils';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
+import { usePermawebProvider } from 'providers/PermawebProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
 import { CloseHandler } from 'wrappers/CloseHandler';
@@ -377,6 +378,7 @@ export default function CollectionsTable(props: {
 	const navigate = useNavigate();
 
 	const arProvider = useArweaveProvider();
+	const permawebProvider = usePermawebProvider();
 
 	const uploadReducer = useSelector((state: RootState) => state.uploadReducer);
 
@@ -390,30 +392,22 @@ export default function CollectionsTable(props: {
 
 	React.useEffect(() => {
 		(async function () {
-			if (arProvider.profile && arProvider.profile.id) {
+			if (arProvider.profile?.id && arProvider.profile?.collections) {
 				setLoading(true);
 				try {
-					const listingLog = await readHandler({
-						processId: AO.collectionsRegistry,
-						action: 'Get-Collections-By-User',
-						tags: [{ name: 'Creator', value: arProvider.profile.id }],
-					});
+					const fetchedCollections = [];
 
-					if (listingLog && listingLog.Collections && listingLog.Collections.length) {
-						setIdCount(listingLog.Collections.length);
-						setCollections(
-							listingLog.Collections.map((collection: any) => {
-								return {
-									id: collection.Id,
-									title: collection.Name,
-									description: collection.Description,
-									creator: collection.Creator,
-									dateCreated: collection.DateCreated,
-									banner: collection.Banner,
-									thumbnail: collection.Thumbnail,
-								};
-							})
-						);
+					for (const id of arProvider.profile.collections) {
+						const collection = await permawebProvider.libs.getCollection(id);
+						if (collection) {
+							setLoading(false);
+							setCollections((prev) => [...(prev ?? []), collection]);
+						}
+						fetchedCollections.push(collection);
+					}
+
+					if (fetchedCollections?.length) {
+						setIdCount(fetchedCollections.length);
 					} else {
 						setIdCount(0);
 						setCollections([]);
