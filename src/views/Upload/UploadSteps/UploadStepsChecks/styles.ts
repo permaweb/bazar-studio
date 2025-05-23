@@ -36,7 +36,8 @@ export const InfoHeader = styled.div`
 	gap: 15px;
 	margin: 0 0 10px 0 !important;
 	span {
-		color: ${(props) => props.theme.colors.font.primary};
+		color: ${(props) => props.theme.colors.font.alt1};
+		font-family: ${(props) => props.theme.typography.family.alt1};
 		font-size: ${(props) => props.theme.typography.size.lg};
 		font-weight: ${(props) => props.theme.typography.weight.xBold};
 		line-height: 1.5;

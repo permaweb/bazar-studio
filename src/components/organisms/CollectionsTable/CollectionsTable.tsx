@@ -2,7 +2,7 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { ReactSVG } from 'react-svg';
-import { createOrder } from '@permaweb/ucm';
+import { createOrder, createOrderbook } from '@permaweb/ucm';
 
 import { readHandler } from 'api';
 
@@ -10,7 +10,6 @@ import { Button } from 'components/atoms/Button';
 import { Checkbox } from 'components/atoms/Checkbox';
 import { FormField } from 'components/atoms/FormField';
 import { IconButton } from 'components/atoms/IconButton';
-import { Loader } from 'components/atoms/Loader';
 import { Panel } from 'components/molecules/Panel';
 import { Table } from 'components/molecules/Table';
 import { AO, ASSETS, PAGINATORS, REDIRECTS, URLS } from 'helpers/config';
@@ -30,6 +29,8 @@ const DENOMINATION = Math.pow(10, 12);
 function CollectionDropdown(props: { id: string; title: string }) {
 	const arProvider = useArweaveProvider();
 	const dispatch = useDispatch();
+
+	const permawebProvider = usePermawebProvider();
 
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
@@ -68,80 +69,112 @@ function CollectionDropdown(props: { id: string; title: string }) {
 		})();
 	}, [props.id, listingModalOpen]);
 
-	async function handleRemoveCollection() {
-		if (!arProvider.wallet || !arProvider.profile || !arProvider.profile.id) {
-			setError(language.connectToContinue);
-			return;
-		}
+	// async function handleRemoveCollection() {
+	// 	if (!arProvider.wallet || !arProvider.profile || !arProvider.profile.id) {
+	// 		setError(language.connectToContinue);
+	// 		return;
+	// 	}
 
-		setRemoving(true);
-		setError(null);
-		try {
-			const response = await readHandler({
-				processId: AO.collectionsRegistry,
-				action: 'Remove-Collection',
-				tags: [{ name: 'CollectionId', value: props.id }],
-			});
+	// 	setRemoving(true);
+	// 	setError(null);
+	// 	try {
+	// 		const response = await readHandler({
+	// 			processId: AO.collectionsRegistry,
+	// 			action: 'Remove-Collection',
+	// 			tags: [{ name: 'CollectionId', value: props.id }],
+	// 		});
 
-			if (response?.Status === 'Error') {
-				setError(response.Message || language.errorOccurred);
-				return;
-			}
+	// 		if (response?.Status === 'Error') {
+	// 			setError(response.Message || language.errorOccurred);
+	// 			return;
+	// 		}
 
-			// Force a refresh of the collections list
-			dispatch({ type: 'TOGGLE_UPLOAD_ACTIVE' });
-			setRemoveConfirmOpen(false);
-		} catch (e: any) {
-			console.error(e);
-			setError(e.message || language.errorOccurred);
-		} finally {
-			setRemoving(false);
-		}
-	}
+	// 		// Force a refresh of the collections list
+	// 		dispatch({ type: 'TOGGLE_UPLOAD_ACTIVE' });
+	// 		setRemoveConfirmOpen(false);
+	// 	} catch (e: any) {
+	// 		console.error(e);
+	// 		setError(e.message || language.errorOccurred);
+	// 	} finally {
+	// 		setRemoving(false);
+	// 	}
+	// }
 
 	async function handleSubmit() {
-		if (
-			arProvider.wallet &&
-			arProvider.profile &&
-			arProvider.profile.id &&
-			collection &&
-			collection.Assets &&
-			collection.Assets.length
-		) {
+		if (arProvider.wallet && arProvider.profile && arProvider.profile.id && collection?.Assets?.length) {
 			setLoading(true);
 			try {
 				for (let i = 0; i < collection.Assets.length; i++) {
 					try {
-						const infoResponse = await readHandler({
-							processId: collection.Assets[i],
-							action: 'Info',
-						});
+						const assetId = collection.Assets[i];
 
-						const title = `(${i + 1}) ${infoResponse?.Name ?? '-'}`;
+						let assetResponse = await permawebProvider.libs.getAtomicAsset(assetId);
+
+						if (!assetResponse.balances) {
+							console.log('Getting balances...');
+							try {
+								await new Promise((r) => setTimeout(r, 1000));
+								const processBalances = await readHandler({
+									processId: assetId,
+									action: 'Balances',
+									data: null,
+								});
+
+								if (processBalances) assetResponse.balances = processBalances;
+							} catch (e: any) {
+								console.error(e);
+							}
+						}
+
+						const title = `(${i + 1}) ${assetResponse?.name ?? '-'}`;
+
 						let balance = 0;
-						if (infoResponse && infoResponse.Balances && infoResponse.Balances[arProvider.profile.id]) {
-							balance = Number(infoResponse.Balances[arProvider.profile.id]);
+						if (assetResponse && assetResponse.balances && assetResponse.balances[arProvider.profile.id]) {
+							balance = Number(assetResponse.balances[arProvider.profile.id]);
 						}
 
 						if (balance > 0) {
-							const dominantToken = collection.Assets[i];
+							const dominantToken = assetId;
 							const swapToken = AO.defaultToken;
 							const quantity = Math.floor((percentage / 100) * balance).toString();
 							const unitPrice = (price * DENOMINATION).toString();
 
-							const data: any = {
-								orderbookId: AO.ucm,
+							let currentOrderbook = assetResponse.metadata?.orderbookId;
+
+							if (!currentOrderbook) {
+								try {
+									const args: any = { assetId: assetId };
+									if (assetResponse.metadata?.collectionId) args.collectionId = assetResponse.metadata?.collectionId;
+
+									const newOrderbook = await createOrderbook(
+										permawebProvider.deps,
+										args,
+										(args: { processing: boolean; success: boolean; message: string }) => {
+											setListingLog((prev) => prev + `${args.message}\n`);
+										}
+									);
+
+									currentOrderbook = newOrderbook;
+								} catch (e: any) {
+									console.error(e);
+									return;
+								}
+							}
+
+							const args: any = {
+								orderbookId: currentOrderbook,
 								creatorId: arProvider.profile.id,
+								action: 'Run-Action',
 								dominantToken: dominantToken,
 								swapToken: swapToken,
 								quantity: quantity,
 							};
 
-							if (unitPrice) data.unitPrice = unitPrice.toString();
+							if (unitPrice) args.unitPrice = unitPrice.toString();
 
 							const orderId = await createOrder(
-								{ wallet: arProvider.wallet },
-								data,
+								permawebProvider.deps,
+								args,
 								(args: { processing: boolean; success: boolean; message: string }) => {
 									setListingLog((prev) => prev + `${args.message}\n`);
 								}
@@ -277,9 +310,9 @@ function CollectionDropdown(props: { id: string; title: string }) {
 							<S.LI onClick={() => setListingModalOpen(true)} disabled={false}>
 								{language.createListings}
 							</S.LI>
-							<S.LI onClick={() => setRemoveConfirmOpen(true)} disabled={false}>
+							{/* <S.LI onClick={() => setRemoveConfirmOpen(true)} disabled={false}>
 								{language.removeCollection}
-							</S.LI>
+							</S.LI> */}
 						</S.DDropdown>
 					)}
 				</S.DWrapper>
@@ -352,14 +385,14 @@ function CollectionDropdown(props: { id: string; title: string }) {
 									disabled={removing}
 									noMinWidth
 								/>
-								<Button
-									type={'danger'}
+								{/* <Button
+									type={'warning'}
 									label={language.remove}
 									handlePress={handleRemoveCollection}
 									disabled={removing}
 									loading={removing}
 									noMinWidth
-								/>
+								/> */}
 							</S.MActions>
 						</S.MFooter>
 					</S.MCWrapper>
@@ -386,9 +419,9 @@ export default function CollectionsTable(props: {
 	const language = languageProvider.object[languageProvider.current];
 
 	const [collections, setCollections] = React.useState<CollectionType[] | null>(null);
-	const [idCount, setIdCount] = React.useState<number>(0);
+	const [idCount, setIdCount] = React.useState<number | string>(0);
 
-	const [loading, setLoading] = React.useState<boolean>(false);
+	const [_loading, setLoading] = React.useState<boolean>(false);
 
 	React.useEffect(() => {
 		(async function () {
@@ -400,10 +433,10 @@ export default function CollectionsTable(props: {
 					for (const id of arProvider.profile.collections) {
 						const collection = await permawebProvider.libs.getCollection(id);
 						if (collection) {
-							setLoading(false);
-							setCollections((prev) => [...(prev ?? []), collection]);
+							setCollections((prev) => [...(prev ?? []), { id: id, ...collection }]);
 						}
 						fetchedCollections.push(collection);
+						setIdCount(`${fetchedCollections.length} · Loading more...`);
 					}
 
 					if (fetchedCollections?.length) {
@@ -471,7 +504,7 @@ export default function CollectionsTable(props: {
 		if (collections && collections.length) {
 			return collections.map((collection: CollectionType) => {
 				const data: any = {};
-				const title = collection.title ?? formatAddress(collection.id, false);
+				const title = collection.title ?? (collection as any).name ?? formatAddress(collection.id, false);
 
 				data.collectionTitle = (
 					<a href={REDIRECTS.bazar.collection(collection.id)} target={'_blank'}>
@@ -484,7 +517,7 @@ export default function CollectionsTable(props: {
 						<S.CWrapper>
 							<Checkbox
 								checked={uploadReducer.data?.collectionId === collection.id}
-								handleSelect={() => handleCollectionChange(collection.id, collection.title)}
+								handleSelect={() => handleCollectionChange(collection.id, collection.title ?? (collection as any).name)}
 								disabled={false}
 							/>
 						</S.CWrapper>
@@ -512,7 +545,6 @@ export default function CollectionsTable(props: {
 				</S.MWrapper>
 			);
 		}
-		if (loading) return <Loader sm relative />;
 		if (collections !== null) {
 			if (collections.length) {
 				return (

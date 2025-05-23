@@ -37,7 +37,7 @@ export default function UploadStepsChecks() {
 		<>
 			<S.Wrapper>
 				<S.InfoHeader>
-					<span>{language.details}</span>
+					<span>{language.review}</span>
 				</S.InfoHeader>
 				<S.InfoWrapper className={'border-wrapper-alt1'}>
 					{uploadReducer.uploadType === 'collection' && (

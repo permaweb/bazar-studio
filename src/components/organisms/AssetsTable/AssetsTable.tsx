@@ -137,6 +137,11 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 	}, [assets]);
 
 	React.useEffect(() => {
+		if (!arProvider.profile) setLoading(true);
+		else setLoading(false);
+	}, [arProvider.profile]);
+
+	React.useEffect(() => {
 		(async function () {
 			if (arProvider.walletAddress && arProvider.profile?.id) {
 				setLoading(true);
@@ -284,13 +289,14 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 			};
 		}
 
-		if (props.useActions) {
-			header.actions = {
-				width: '15%',
-				align: 'center' as AlignType,
-				display: language.actions,
-			};
-		}
+		// TODO
+		// if (props.useActions) {
+		// 	header.actions = {
+		// 		width: '15%',
+		// 		align: 'center' as AlignType,
+		// 		display: language.actions,
+		// 	};
+		// }
 
 		return header;
 	}
@@ -327,15 +333,16 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 					);
 				}
 
-				if (props.useActions) {
-					data.actions = (
-						<AssetDropdown
-							id={element.node.id}
-							title={displayTitle}
-							handleToggleUpdate={() => setToggleUpdate(!toggleUpdate)}
-						/>
-					);
-				}
+				// TODO
+				// if (props.useActions) {
+				// 	data.actions = (
+				// 		<AssetDropdown
+				// 			id={element.node.id}
+				// 			title={displayTitle}
+				// 			handleToggleUpdate={() => setToggleUpdate(!toggleUpdate)}
+				// 		/>
+				// 	);
+				// }
 
 				return {
 					data: data,
