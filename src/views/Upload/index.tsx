@@ -101,7 +101,7 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								thumbnail: uploadReducer.data.thumbnail,
 								banner: uploadReducer.data.banner,
-								skipRegistry: true, // TODO: REMOVE,
+								skipRegistry: false,
 								skipActivity: false,
 							},
 							(status: string) => setResponse(status)
