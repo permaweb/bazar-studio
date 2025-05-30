@@ -28,36 +28,21 @@ export default function Profile(props: { address: string }) {
 	const language = languageProvider.object[languageProvider.current];
 
 	const [loading, setLoading] = React.useState<boolean>(false);
-	// const [copied, setCopied] = React.useState<boolean>(false);
 
 	const [fullProfile, setFullProfile] = React.useState<ProfileHeaderType | null>(null);
 	const [showBio, setShowBio] = React.useState<boolean>(false);
 	const [showManage, setShowManage] = React.useState<boolean>(false);
 
-	// const copyAddress = React.useCallback(async () => {
-	// 	if (fullProfile && fullProfile.walletAddress) {
-	// 		if (fullProfile.walletAddress.length > 0) {
-	// 			await navigator.clipboard.writeText(fullProfile.walletAddress);
-	// 			setCopied(true);
-	// 			setTimeout(() => setCopied(false), 2000);
-	// 		}
-	// 	}
-	// }, [fullProfile]);
-
 	React.useEffect(() => {
 		(async function () {
 			if (props.address && checkValidAddress(props.address)) {
-				setLoading(true);
-				try {
-					const currentProfile = await arProvider.libs.getProfileByWalletAddress(props.address);
-					setFullProfile(currentProfile);
-				} catch (e: any) {
-					console.error(e);
-				}
-				setLoading(false);
+				if (arProvider.profile) {
+					setFullProfile(arProvider.profile);
+					setLoading(false);
+				} else setLoading(true);
 			}
 		})();
-	}, [props.address]);
+	}, [arProvider.profile]);
 
 	function getAvatar() {
 		if (fullProfile && fullProfile.thumbnail && checkValidAddress(fullProfile.thumbnail))
@@ -72,7 +57,7 @@ export default function Profile(props: { address: string }) {
 	function getHeaderDetails() {
 		return (
 			<S.HeaderHA>
-				<h4>{fullProfile.displayName ? fullProfile.displayName : formatAddress(fullProfile.walletAddress, false)}</h4>
+				<h4>{fullProfile.displayName ? fullProfile.displayName : formatAddress(arProvider.walletAddress, false)}</h4>
 				<S.HeaderInfoDetail>
 					<span>{`${getUsername()}`}</span>
 				</S.HeaderInfoDetail>
@@ -104,7 +89,7 @@ export default function Profile(props: { address: string }) {
 								<Button
 									type={'primary'}
 									label={arProvider.profile && arProvider.profile.id ? language.editProfile : language.createProfile}
-									handlePress={() => setShowManage(true)}
+									handlePress={() => window.open(REDIRECTS.bazar.base)}
 									disabled={!arProvider.walletAddress}
 									icon={ASSETS.user}
 									iconLeftAlign
@@ -154,7 +139,7 @@ export default function Profile(props: { address: string }) {
 									<Button
 										type={'alt1'}
 										label={arProvider.profile && arProvider.profile.id ? language.editProfile : language.createProfile}
-										handlePress={() => setShowManage(true)}
+										handlePress={() => window.open(REDIRECTS.bazar.base)}
 										disabled={!arProvider.walletAddress}
 										icon={ASSETS.user}
 										height={55}

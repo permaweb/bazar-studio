@@ -273,6 +273,7 @@ export const WALLET_PERMISSIONS = ['ACCESS_ADDRESS', 'ACCESS_PUBLIC_KEY', 'SIGN_
 
 export const STORAGE = {
 	none: 'N/A',
+	profileByWallet: (id: string) => `profile-by-wallet-${id}`,
 };
 
 export const AR_PROFILE = {
@@ -338,6 +339,7 @@ export const CURRENCIES = {
 
 export const REDIRECTS = {
 	bazar: {
+		base: `https://bazar.arweave.net`,
 		asset: (id: string) => `https://bazar.arweave.net/#/asset/${id}`,
 		collection: (id: string) => `https://bazar.arweave.net/#/collection/${id}`,
 		profile: (id: string) => `https://bazar.arweave.net/#/profile/${id}`,

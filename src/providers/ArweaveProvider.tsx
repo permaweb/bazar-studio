@@ -11,7 +11,7 @@ import PermawebLibs from '@permaweb/libs';
 import { readHandler } from 'api';
 
 import { Modal } from 'components/molecules/Modal';
-import { AO, API_CONFIG, AR_WALLETS, GATEWAYS, REDIRECTS, WALLET_PERMISSIONS } from 'helpers/config';
+import { AO, API_CONFIG, AR_WALLETS, GATEWAYS, REDIRECTS, STORAGE, WALLET_PERMISSIONS } from 'helpers/config';
 import { getARBalanceEndpoint, getTurboBalanceEndpoint } from 'helpers/endpoints';
 import { ProfileHeaderType, WalletEnum } from 'helpers/types';
 import { getARAmountFromWinc } from 'helpers/utils';
@@ -162,18 +162,63 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 		})();
 	}, [walletAddress]);
 
+	// React.useEffect(() => {
+	// 	(async function () {
+	// 		if (wallet && walletAddress) {
+	// 			await new Promise((r) => setTimeout(r, 2000));
+	// 			try {
+	// 				setProfile(await libs.getProfileByWalletAddress(walletAddress));
+	// 			} catch (e: any) {
+	// 				console.error(e);
+	// 			}
+	// 		}
+	// 	})();
+	// }, [walletAddress]);
+
 	React.useEffect(() => {
 		(async function () {
-			if (wallet && walletAddress) {
-				await new Promise((r) => setTimeout(r, 2000));
-				try {
-					setProfile(await libs.getProfileByWalletAddress(walletAddress));
-				} catch (e: any) {
-					console.error(e);
+			if (walletAddress) {
+				const cachedProfile = getCachedProfile(walletAddress);
+
+				if (cachedProfile) {
+					if (cachedProfile.status && cachedProfile.status === 'pending') {
+						setProfile(cachedProfile);
+						return;
+					}
+
+					setProfile(cachedProfile);
 				}
+				await new Promise((r) => setTimeout(r, 2000));
+				setProfile(await resolveProfile(walletAddress));
 			}
 		})();
 	}, [walletAddress]);
+
+	async function resolveProfile(address: string) {
+		try {
+			let fetchedProfile: any;
+			const cachedProfile = getCachedProfile(address);
+			if (cachedProfile?.id) fetchedProfile = await libs.getProfileById(cachedProfile.id);
+			else fetchedProfile = await libs.getProfileByWalletAddress(address);
+			let profileToUse = { ...fetchedProfile };
+
+			if (!fetchedProfile?.id && cachedProfile) profileToUse = cachedProfile;
+			cacheProfile(address, profileToUse);
+
+			return profileToUse;
+		} catch (e: any) {
+			console.error('fetchError', e);
+		}
+	}
+
+	function getCachedProfile(address: string) {
+		const cached = localStorage.getItem(STORAGE.profileByWallet(address));
+		return cached ? JSON.parse(cached) : null;
+	}
+
+	function cacheProfile(address: string, profileData: any) {
+		localStorage.setItem(STORAGE.profileByWallet(address), JSON.stringify(profileData));
+	}
 
 	React.useEffect(() => {
 		(async function () {

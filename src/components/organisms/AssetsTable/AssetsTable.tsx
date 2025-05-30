@@ -125,7 +125,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 	const [currentTableCursor, setCurrentTableCursor] = React.useState<string | null>(null);
 	const [currentRecords, setCurrentRecords] = React.useState<GQLNodeResponseType[] | null>(null);
 
-	const [toggleUpdate, setToggleUpdate] = React.useState<boolean>(false);
+	const [toggleUpdate, _setToggleUpdate] = React.useState<boolean>(false);
 
 	const lastRecordIndex = 1 * recordsPerPage;
 	const firstRecordIndex = lastRecordIndex - recordsPerPage;
@@ -186,7 +186,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 				}
 			}
 		})();
-	}, [arProvider.walletAddress, arProvider.profile, uploadReducer.uploadActive, toggleUpdate]);
+	}, [arProvider.walletAddress, arProvider.profile?.id, uploadReducer.uploadActive, toggleUpdate]);
 
 	React.useEffect(() => {
 		(async function () {
