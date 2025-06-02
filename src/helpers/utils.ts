@@ -78,7 +78,7 @@ export function getTagValue(list: { [key: string]: any }[], name: string): strin
 			}
 		}
 	}
-	return STORAGE.none;
+	return null;
 }
 
 export function log(message: any, _status: 0 | 1 | null): void {
