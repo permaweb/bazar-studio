@@ -201,6 +201,62 @@ export default function UploadStepsDetails() {
 		return { status: false, message: null };
 	}
 
+	function isRendererCompatibleWithFiles(rendererOption: any) {
+		if (!uploadReducer.data.contentList || uploadReducer.data.contentList.length === 0) {
+			return true;
+		}
+
+		for (const file of uploadReducer.data.contentList) {
+			const fileType = file.file.type;
+
+			if (rendererOption.label === '3D' && !fileType.includes('gltf-binary') && !file.file.name.endsWith('.glb')) {
+				return false;
+			}
+
+			if (
+				rendererOption.label === 'Audio' &&
+				!fileType.includes('audio') &&
+				!file.file.name.match(/\.(mp3|wav|ogg|m4a)$/i)
+			) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	function getIncompatibilityReason(rendererOption: any) {
+		if (!uploadReducer.data.contentList || uploadReducer.data.contentList.length === 0) {
+			return null;
+		}
+
+		const incompatibleFiles = [];
+
+		for (const file of uploadReducer.data.contentList) {
+			const fileType = file.file.type;
+			const fileName = file.file.name;
+
+			if (rendererOption.label === '3D' && !fileType.includes('gltf-binary') && !fileName.endsWith('.glb')) {
+				incompatibleFiles.push(fileName);
+			}
+
+			if (rendererOption.label === 'Audio' && !fileType.includes('audio') && !fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+				incompatibleFiles.push(fileName);
+			}
+		}
+
+		if (incompatibleFiles.length > 0) {
+			const fileNames =
+				incompatibleFiles.length > 2
+					? `${incompatibleFiles.slice(0, 2).join(', ')} and ${incompatibleFiles.length - 2} more`
+					: incompatibleFiles.join(', ');
+
+			return `Incompatible with: ${fileNames}`;
+		}
+
+		return null;
+	}
+
 	return (
 		<>
 			<S.Wrapper>
@@ -297,15 +353,20 @@ export default function UploadStepsDetails() {
 						</S.RInfo>
 						<S.ROptionsWrapper>
 							{Object.keys(rendererOptions).map((id: string, index: number) => {
+								const isCompatible = isRendererCompatibleWithFiles(rendererOptions[id]);
+								const compatibilityReason = !isCompatible ? getIncompatibilityReason(rendererOptions[id]) : null;
+
 								return (
 									<S.ROption
 										key={index}
 										active={renderer?.label === rendererOptions[id].label}
-										disabled={false}
-										onClick={() => handleRendererChange(rendererOptions[id])}
+										disabled={!isCompatible}
+										onClick={() => isCompatible && handleRendererChange(rendererOptions[id])}
+										title={compatibilityReason || ''}
 									>
 										<span>{rendererOptions[id].label}</span>
 										<p>{rendererOptions[id].description}</p>
+										{!isCompatible && <S.RIncompatible>{compatibilityReason}</S.RIncompatible>}
 									</S.ROption>
 								);
 							})}

@@ -101,6 +101,8 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								thumbnail: uploadReducer.data.thumbnail,
 								banner: uploadReducer.data.banner,
+								skipRegistry: false,
+								skipActivity: false,
 							},
 							(status: string) => setResponse(status)
 						);
@@ -124,6 +126,16 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								updateType: 'Add',
 							});
+
+							setResponse('Adding collection to profile...');
+
+							const updatedCollections = [...(arProvider.profile.collections ?? []), collectionId];
+							const profileUpdateResponse = await permawebProvider.libs.updateZone(
+								{ Collections: updatedCollections },
+								arProvider.profile.id,
+								arProvider.wallet
+							);
+							console.log(`Profile update: ${profileUpdateResponse}`);
 
 							if (updateAssetsResponse) {
 								setResponse(`${language.collectionCreated}!`);
@@ -212,7 +224,7 @@ export default function Upload() {
 					const asset: any = {
 						name: assetName,
 						description: assetDescription,
-						topics: [...uploadReducer.data.topics, 'permabrawl'],
+						topics: uploadReducer.data.topics,
 						creator: arProvider.profile.id,
 						data: buffer,
 						contentType: contentType,
@@ -245,6 +257,8 @@ export default function Upload() {
 
 	function handleClear() {
 		setResponse(null);
+		setUploadLog('');
+		setErrorLog('');
 		dispatch(uploadActions.clearUpload());
 	}
 

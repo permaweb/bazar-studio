@@ -12,6 +12,7 @@ import { IconButton } from 'components/atoms/IconButton';
 import { Loader } from 'components/atoms/Loader';
 import { Notification } from 'components/atoms/Notification';
 import { Table } from 'components/molecules/Table';
+import { AOS_SNIPPETS } from 'helpers/aos-snippets';
 import { ASSETS, GATEWAYS, PAGINATORS, REDIRECTS, STORAGE, TAGS, URLS } from 'helpers/config';
 import { AlignType, CursorEnum, GQLNodeResponseType, GroupIndexType } from 'helpers/types';
 import { formatAddress, getTagValue } from 'helpers/utils';
@@ -20,6 +21,8 @@ import { useLanguageProvider } from 'providers/LanguageProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
 import { CloseHandler } from 'wrappers/CloseHandler';
+
+import { CodeSnippetModal } from '../../molecules/CodeSnippetModal';
 
 import * as S from './styles';
 
@@ -30,6 +33,7 @@ export function AssetDropdown(props: { id: string; title: string; handleToggleUp
 	const language = languageProvider.object[languageProvider.current];
 
 	const [open, setOpen] = React.useState<boolean>(false);
+	const [showAOSSnippet, setShowAOSSnippet] = React.useState<string | null>(null);
 
 	const [loading, setLoading] = React.useState<boolean>(false);
 	const [response, setResponse] = React.useState<string>(null);
@@ -72,14 +76,29 @@ export function AssetDropdown(props: { id: string; title: string; handleToggleUp
 					/>
 					{open && (
 						<S.DDropdown className={'border-wrapper-primary'} open={open}>
+							<S.LI onClick={() => setShowAOSSnippet('listAsset')} disabled={false}>
+								{language.listAsset}
+							</S.LI>
+							<S.LI onClick={() => setShowAOSSnippet('unlistAsset')} disabled={false}>
+								{language.unlistAsset}
+							</S.LI>
+							<S.LI onClick={() => setShowAOSSnippet('transferAsset')} disabled={false}>
+								{language.transferAsset}
+							</S.LI>
 							<S.LI onClick={handleRemoveAsset} disabled={loading}>
 								{response ? response : loading ? `${language.loading}...` : language.removeAsset}
+							</S.LI>
+							<S.LI onClick={() => setShowAOSSnippet('getAssetOwners')} disabled={false}>
+								{language.viewOwners}
 							</S.LI>
 						</S.DDropdown>
 					)}
 				</S.DWrapper>
 			</CloseHandler>
 			{response && <Notification message={response} callback={() => setResponse(null)} />}
+			{showAOSSnippet && (
+				<CodeSnippetModal {...AOS_SNIPPETS[showAOSSnippet]} open={true} onClose={() => setShowAOSSnippet(null)} />
+			)}
 		</>
 	);
 }
@@ -106,7 +125,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 	const [currentTableCursor, setCurrentTableCursor] = React.useState<string | null>(null);
 	const [currentRecords, setCurrentRecords] = React.useState<GQLNodeResponseType[] | null>(null);
 
-	const [toggleUpdate, setToggleUpdate] = React.useState<boolean>(false);
+	const [toggleUpdate, _setToggleUpdate] = React.useState<boolean>(false);
 
 	const lastRecordIndex = 1 * recordsPerPage;
 	const firstRecordIndex = lastRecordIndex - recordsPerPage;
@@ -116,6 +135,11 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 			setCurrentRecords(assets.length ? assets.slice(firstRecordIndex, lastRecordIndex) : []);
 		}
 	}, [assets]);
+
+	React.useEffect(() => {
+		if (!arProvider.profile) setLoading(true);
+		else setLoading(false);
+	}, [arProvider.profile]);
 
 	React.useEffect(() => {
 		(async function () {
@@ -162,7 +186,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 				}
 			}
 		})();
-	}, [arProvider.walletAddress, arProvider.profile, uploadReducer.uploadActive, toggleUpdate]);
+	}, [arProvider.walletAddress, arProvider.profile?.id, uploadReducer.uploadActive, toggleUpdate]);
 
 	React.useEffect(() => {
 		(async function () {
@@ -265,13 +289,14 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 			};
 		}
 
-		if (props.useActions) {
-			header.actions = {
-				width: '15%',
-				align: 'center' as AlignType,
-				display: language.actions,
-			};
-		}
+		// TODO
+		// if (props.useActions) {
+		// 	header.actions = {
+		// 		width: '15%',
+		// 		align: 'center' as AlignType,
+		// 		display: language.actions,
+		// 	};
+		// }
 
 		return header;
 	}
@@ -308,15 +333,16 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 					);
 				}
 
-				if (props.useActions) {
-					data.actions = (
-						<AssetDropdown
-							id={element.node.id}
-							title={displayTitle}
-							handleToggleUpdate={() => setToggleUpdate(!toggleUpdate)}
-						/>
-					);
-				}
+				// TODO
+				// if (props.useActions) {
+				// 	data.actions = (
+				// 		<AssetDropdown
+				// 			id={element.node.id}
+				// 			title={displayTitle}
+				// 			handleToggleUpdate={() => setToggleUpdate(!toggleUpdate)}
+				// 		/>
+				// 	);
+				// }
 
 				return {
 					data: data,

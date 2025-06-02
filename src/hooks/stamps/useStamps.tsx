@@ -1,9 +1,9 @@
 import React from 'react';
-
-import Arweave from 'arweave';
 import { defaultCacheOptions, LoggerFactory, WarpFactory } from 'warp-contracts';
 import { DeployPlugin } from 'warp-contracts-plugin-deploy';
 import { InjectedArweaveSigner } from 'warp-contracts-plugin-signature';
+
+import Arweave from 'arweave';
 import Stamps from '@permaweb/stampjs';
 
 import { API_CONFIG, GATEWAYS } from 'helpers/config';

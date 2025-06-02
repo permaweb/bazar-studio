@@ -2,7 +2,7 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { ReactSVG } from 'react-svg';
-import { createOrder } from '@permaweb/ucm';
+import { createOrder, createOrderbook } from '@permaweb/ucm';
 
 import { readHandler } from 'api';
 
@@ -15,9 +15,10 @@ import { Panel } from 'components/molecules/Panel';
 import { Table } from 'components/molecules/Table';
 import { AO, ASSETS, PAGINATORS, REDIRECTS, URLS } from 'helpers/config';
 import { AlignType, CollectionType } from 'helpers/types';
-import { checkValidAddress, formatAddress } from 'helpers/utils';
+import { checkValidAddress, formatAddress, getTagValue } from 'helpers/utils';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
+import { usePermawebProvider } from 'providers/PermawebProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
 import { CloseHandler } from 'wrappers/CloseHandler';
@@ -28,12 +29,16 @@ const DENOMINATION = Math.pow(10, 12);
 
 function CollectionDropdown(props: { id: string; title: string }) {
 	const arProvider = useArweaveProvider();
+	const permawebProvider = usePermawebProvider();
 
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
 
 	const [collection, setCollection] = React.useState<any>(null);
 	const [fetchingcCollection, setFetchingCollection] = React.useState<any>(null);
+	const [removeConfirmOpen, setRemoveConfirmOpen] = React.useState<boolean>(false);
+	const [removing, _setRemoving] = React.useState<boolean>(false);
+	const [error, setError] = React.useState<string | null>(null);
 
 	const [price, setPrice] = React.useState<number>(0);
 	const [percentage, setPercentage] = React.useState<number>(100);
@@ -49,9 +54,10 @@ function CollectionDropdown(props: { id: string; title: string }) {
 			if (props.id && checkValidAddress(props.id) && listingModalOpen && !collection) {
 				setFetchingCollection(true);
 				try {
-					const fetchResponse = await readHandler({
+					const fetchResponse = await permawebProvider.libs.readState({
 						processId: props.id,
-						action: 'Info',
+						path: 'collection',
+						fallbackAction: 'Info',
 					});
 
 					if (fetchResponse && fetchResponse.Assets) setCollection(fetchResponse);
@@ -63,49 +69,113 @@ function CollectionDropdown(props: { id: string; title: string }) {
 		})();
 	}, [props.id, listingModalOpen]);
 
+	// async function handleRemoveCollection() {
+	// 	if (!arProvider.wallet || !arProvider.profile || !arProvider.profile.id) {
+	// 		setError(language.connectToContinue);
+	// 		return;
+	// 	}
+
+	// 	setRemoving(true);
+	// 	setError(null);
+	// 	try {
+	// 		const response = await readHandler({
+	// 			processId: AO.collectionsRegistry,
+	// 			action: 'Remove-Collection',
+	// 			tags: [{ name: 'CollectionId', value: props.id }],
+	// 		});
+
+	// 		if (response?.Status === 'Error') {
+	// 			setError(response.Message || language.errorOccurred);
+	// 			return;
+	// 		}
+
+	// 		// Force a refresh of the collections list
+	// 		dispatch({ type: 'TOGGLE_UPLOAD_ACTIVE' });
+	// 		setRemoveConfirmOpen(false);
+	// 	} catch (e: any) {
+	// 		console.error(e);
+	// 		setError(e.message || language.errorOccurred);
+	// 	} finally {
+	// 		setRemoving(false);
+	// 	}
+	// }
+
 	async function handleSubmit() {
-		if (
-			arProvider.wallet &&
-			arProvider.profile &&
-			arProvider.profile.id &&
-			collection &&
-			collection.Assets &&
-			collection.Assets.length
-		) {
+		console.log(collection);
+		if (arProvider.wallet && arProvider.profile?.id && arProvider.profile.id && collection?.Assets?.length) {
 			setLoading(true);
 			try {
 				for (let i = 0; i < collection.Assets.length; i++) {
 					try {
-						const infoResponse = await readHandler({
-							processId: collection.Assets[i],
-							action: 'Info',
-						});
+						const assetId = collection.Assets[i];
 
-						const title = `(${i + 1}) ${infoResponse?.Name ?? '-'}`;
+						let assetResponse = await permawebProvider.libs.getAtomicAsset(assetId);
+
+						if (!assetResponse.balances) {
+							console.log('Getting balances...');
+							try {
+								await new Promise((r) => setTimeout(r, 1000));
+								const processBalances = await readHandler({
+									processId: assetId,
+									action: 'Balances',
+									data: null,
+								});
+
+								if (processBalances) assetResponse.balances = processBalances;
+							} catch (e: any) {
+								console.error(e);
+							}
+						}
+
+						const title = `(${i + 1}) ${assetResponse?.name ?? '-'}`;
+
 						let balance = 0;
-						if (infoResponse && infoResponse.Balances && infoResponse.Balances[arProvider.profile.id]) {
-							balance = Number(infoResponse.Balances[arProvider.profile.id]);
+						if (assetResponse && assetResponse.balances && assetResponse.balances[arProvider.profile.id]) {
+							balance = Number(assetResponse.balances[arProvider.profile.id]);
 						}
 
 						if (balance > 0) {
-							const dominantToken = collection.Assets[i];
+							const dominantToken = assetId;
 							const swapToken = AO.defaultToken;
 							const quantity = Math.floor((percentage / 100) * balance).toString();
 							const unitPrice = (price * DENOMINATION).toString();
 
-							const data: any = {
-								orderbookId: AO.ucm,
+							let currentOrderbook = assetResponse.metadata?.orderbookId;
+
+							if (!currentOrderbook) {
+								try {
+									const args: any = { assetId: assetId };
+									if (assetResponse.metadata?.collectionId) args.collectionId = assetResponse.metadata?.collectionId;
+
+									const newOrderbook = await createOrderbook(
+										permawebProvider.deps,
+										args,
+										(args: { processing: boolean; success: boolean; message: string }) => {
+											setListingLog((prev) => prev + `${args.message}\n`);
+										}
+									);
+
+									currentOrderbook = newOrderbook;
+								} catch (e: any) {
+									console.error(e);
+									return;
+								}
+							}
+
+							const args: any = {
+								orderbookId: currentOrderbook,
 								creatorId: arProvider.profile.id,
+								action: 'Run-Action',
 								dominantToken: dominantToken,
 								swapToken: swapToken,
 								quantity: quantity,
 							};
 
-							if (unitPrice) data.unitPrice = unitPrice.toString();
+							if (unitPrice) args.unitPrice = unitPrice.toString();
 
 							const orderId = await createOrder(
-								{ wallet: arProvider.wallet },
-								data,
+								permawebProvider.deps,
+								args,
 								(args: { processing: boolean; success: boolean; message: string }) => {
 									setListingLog((prev) => prev + `${args.message}\n`);
 								}
@@ -241,11 +311,94 @@ function CollectionDropdown(props: { id: string; title: string }) {
 							<S.LI onClick={() => setListingModalOpen(true)} disabled={false}>
 								{language.createListings}
 							</S.LI>
+							{/* <S.LI onClick={() => setRemoveConfirmOpen(true)} disabled={false}>
+								{language.removeCollection}
+							</S.LI> */}
 						</S.DDropdown>
 					)}
 				</S.DWrapper>
 			</CloseHandler>
 			{listingModalOpen && getListingModal()}
+			{removeConfirmOpen && (
+				<Panel
+					open={true}
+					width={400}
+					header={language.removeCollection}
+					handleClose={() => setRemoveConfirmOpen(false)}
+				>
+					<S.MCWrapper>
+						<S.MBody>
+							<S.MHeader>
+								<p>{language.removeCollectionConfirm}</p>
+							</S.MHeader>
+							{error && (
+								<S.MError>
+									<p>{error}</p>
+								</S.MError>
+							)}
+							<S.MSection>
+								<p>{language.removeCollectionAOS}</p>
+								<S.CodeBlock>
+									<code>{`Send({
+  Target = "COLLECTIONS_REGISTRY",
+  Action = "Remove-Collection",
+  Tags = {
+    CollectionId = "${props.id}"
+  }
+})`}</code>
+									<button
+										onClick={(event) => {
+											navigator.clipboard.writeText(`Send({
+  Target = "COLLECTIONS_REGISTRY",
+  Action = "Remove-Collection",
+  Tags = {
+    CollectionId = "${props.id}"
+  }
+})`);
+											const btn = event?.target as HTMLButtonElement;
+											const originalText = btn.textContent;
+											btn.textContent = 'Copied!';
+											setTimeout(() => {
+												btn.textContent = originalText;
+											}, 2000);
+										}}
+									>
+										Copy
+									</button>
+								</S.CodeBlock>
+								<p>
+									{language.removeCollectionPermissions}{' '}
+									<a href="#/docs/aos/commands" target="_blank" rel="noopener noreferrer">
+										View full AOS documentation
+									</a>
+								</p>
+							</S.MSection>
+						</S.MBody>
+						<S.MFooter>
+							<S.MActions>
+								<Button
+									type={'primary'}
+									label={language.cancel}
+									handlePress={() => {
+										setRemoveConfirmOpen(false);
+										setError(null);
+									}}
+									disabled={removing}
+									noMinWidth
+								/>
+								{/* <Button
+									type={'warning'}
+									label={language.remove}
+									handlePress={handleRemoveCollection}
+									disabled={removing}
+									loading={removing}
+									noMinWidth
+								/> */}
+							</S.MActions>
+						</S.MFooter>
+					</S.MCWrapper>
+				</Panel>
+			)}
 		</>
 	);
 }
@@ -259,6 +412,7 @@ export default function CollectionsTable(props: {
 	const navigate = useNavigate();
 
 	const arProvider = useArweaveProvider();
+	const permawebProvider = usePermawebProvider();
 
 	const uploadReducer = useSelector((state: RootState) => state.uploadReducer);
 
@@ -266,51 +420,13 @@ export default function CollectionsTable(props: {
 	const language = languageProvider.object[languageProvider.current];
 
 	const [collections, setCollections] = React.useState<CollectionType[] | null>(null);
-	const [idCount, setIdCount] = React.useState<number>(0);
-
-	const [loading, setLoading] = React.useState<boolean>(false);
+	const [idCount, setIdCount] = React.useState<number | string>(0);
 
 	React.useEffect(() => {
 		(async function () {
-			if (arProvider.profile?.id && arProvider.profile?.collections) {
-				setLoading(true);
-				try {
-					const fetchedCollections = [];
-
-					for (const id of arProvider.profile.collections) {
-						const collection = await arProvider.libs.readProcess({
-							processId: id,
-							action: 'Info',
-						});
-						fetchedCollections.push(collection);
-					}
-
-					if (fetchedCollections?.length) {
-						setIdCount(fetchedCollections.length);
-						setCollections(
-							fetchedCollections.map((collection: any) => {
-								return {
-									id: collection.Id,
-									title: collection.Name,
-									description: collection.Description,
-									creator: collection.Creator,
-									dateCreated: collection.DateCreated,
-									banner: collection.Banner,
-									thumbnail: collection.Thumbnail,
-								};
-							})
-						);
-					} else {
-						setIdCount(0);
-						setCollections([]);
-					}
-				} catch (e: any) {
-					console.error(e);
-				}
-				setLoading(false);
-			}
+			loadCollections();
 		})();
-	}, [arProvider.profile, uploadReducer.uploadActive]);
+	}, [arProvider.profile?.id]);
 
 	function handleCollectionChange(id: string, name: string) {
 		const currentId = uploadReducer.data?.collectionId;
@@ -333,6 +449,45 @@ export default function CollectionsTable(props: {
 		);
 	}
 
+	async function loadCollections() {
+		const allIds = arProvider.profile?.collections;
+		if (allIds?.length > 0) {
+			try {
+				setIdCount(allIds.length);
+
+				const response = await permawebProvider.libs.getAggregatedGQLData({
+					ids: allIds,
+				});
+
+				const returnedIds = response?.map((edge) => edge.node.id) ?? [];
+
+				const missingIds = allIds.filter((id) => !returnedIds.includes(id));
+
+				const collections =
+					response?.map((edge) => ({
+						id: edge.node.id,
+						name: getTagValue(edge.node.tags, 'Name'),
+						title: getTagValue(edge.node.tags, 'Title'),
+					})) ?? [];
+
+				setCollections(collections);
+
+				if (missingIds.length > 0) {
+					for (const id of missingIds) {
+						const collection = await permawebProvider.libs.getCollection(id);
+						if (collection) {
+							setCollections((prev) => [...(prev ?? []), { id: id, ...collection }]);
+						}
+					}
+				}
+			} catch (e: any) {
+				console.error(e);
+				setCollections([]);
+			}
+		} else {
+			setCollections([]);
+		}
+	}
 	function getTableHeader() {
 		const header: any = {};
 		header.collectionTitle = {
@@ -363,7 +518,7 @@ export default function CollectionsTable(props: {
 		if (collections && collections.length) {
 			return collections.map((collection: CollectionType) => {
 				const data: any = {};
-				const title = collection.title ?? formatAddress(collection.id, false);
+				const title = collection.title ?? (collection as any).name ?? formatAddress(collection.id, false);
 
 				data.collectionTitle = (
 					<a href={REDIRECTS.bazar.collection(collection.id)} target={'_blank'}>
@@ -376,7 +531,7 @@ export default function CollectionsTable(props: {
 						<S.CWrapper>
 							<Checkbox
 								checked={uploadReducer.data?.collectionId === collection.id}
-								handleSelect={() => handleCollectionChange(collection.id, collection.title)}
+								handleSelect={() => handleCollectionChange(collection.id, collection.title ?? (collection as any).name)}
 								disabled={false}
 							/>
 						</S.CWrapper>
@@ -404,7 +559,6 @@ export default function CollectionsTable(props: {
 				</S.MWrapper>
 			);
 		}
-		if (loading) return <Loader sm relative />;
 		if (collections !== null) {
 			if (collections.length) {
 				return (
@@ -414,7 +568,7 @@ export default function CollectionsTable(props: {
 							action={null}
 							header={getTableHeader()}
 							data={getTableData()}
-							recordsPerPage={PAGINATORS.assetTable}
+							recordsPerPage={PAGINATORS.default}
 							showPageNumbers={false}
 							handleCursorFetch={(_cursor: string | null) => {}}
 							cursors={{
@@ -439,6 +593,8 @@ export default function CollectionsTable(props: {
 				);
 			}
 		}
+
+		return <Loader sm relative />;
 	}
 
 	return (
