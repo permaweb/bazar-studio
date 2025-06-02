@@ -307,8 +307,8 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 				const data: any = {};
 
 				const titleTag =
-					getTagValue(element.node.tags, 'Bootloader-Name') ||
-					getTagValue(element.node.tags, TAGS.keys.ans110.title) ||
+					getTagValue(element.node.tags, 'Bootloader-Name') ??
+					getTagValue(element.node.tags, TAGS.keys.ans110.title) ??
 					getTagValue(element.node.tags, TAGS.keys.name);
 
 				const title = titleTag !== STORAGE.none ? titleTag : formatAddress(element.node.id, false);
