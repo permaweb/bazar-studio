@@ -315,3 +315,17 @@ export const CoverArtInfo = styled.div`
 		line-height: 1.4;
 	}
 `;
+
+export const CoverArtFileSize = styled.div`
+	text-align: center;
+	padding: 10px;
+	background: ${(props) => props.theme.colors.container.alt4.background};
+	border-radius: ${STYLING.dimensions.radius.primary};
+	border: 1px solid ${(props) => props.theme.colors.border.alt1};
+
+	span {
+		color: ${(props) => props.theme.colors.font.primary};
+		font-size: ${(props) => props.theme.typography.size.xSmall};
+		font-weight: ${(props) => props.theme.typography.weight.bold};
+	}
+`;

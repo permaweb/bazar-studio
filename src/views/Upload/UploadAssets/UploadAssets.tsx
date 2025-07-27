@@ -47,11 +47,25 @@ function FileDropdown(props: {
 
 	const fileInputRef = React.useRef<any>(null);
 
+	function handleRemoveCoverArt() {
+		props.handleAddField(props.data.file.name, '', 'coverArt');
+		setCoverArt(''); // Reset local state
+		if (fileInputRef.current) {
+			fileInputRef.current.value = ''; // Clear file input
+		}
+		setActiveFieldAdd(null); // Close modal if open
+		setOpen(false);
+	}
+
 	React.useEffect(() => {
-		setTitle('');
-		setDescription('');
-		setCoverArt('');
-	}, [props.id]);
+		setTitle(props.data.title || '');
+		setDescription(props.data.description || '');
+		setCoverArt(props.data.coverArt || '');
+		// Reset file input when component re-renders
+		if (fileInputRef.current) {
+			fileInputRef.current.value = '';
+		}
+	}, [props.id, props.data.title, props.data.description, props.data.coverArt]);
 
 	function handleCoverArtChange(e: React.ChangeEvent<HTMLInputElement>) {
 		if (e.target.files && e.target.files.length) {
@@ -172,6 +186,9 @@ function FileDropdown(props: {
 						<S.CoverArtInfo>
 							<span>{language.coverArtInfo}</span>
 						</S.CoverArtInfo>
+						<S.CoverArtFileSize>
+							<span>📁 File size limit: {getByteSizeDisplay(MAX_THUMBNAIL_IMAGE_SIZE)}</span>
+						</S.CoverArtFileSize>
 					</S.CoverArtWrapper>
 				);
 				handleSave = (
@@ -244,13 +261,7 @@ function FileDropdown(props: {
 										{props.data.coverArt ? language.editCoverArt : language.uploadCoverArt}
 									</S.LI>
 									{props.data.coverArt && (
-										<S.LI
-											onClick={() => {
-												props.handleAddField(props.data.file.name, '', 'coverArt');
-												setOpen(false);
-											}}
-											disabled={false}
-										>
+										<S.LI onClick={handleRemoveCoverArt} disabled={false}>
 											{language.removeCoverArt}
 										</S.LI>
 									)}

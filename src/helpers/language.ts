@@ -311,7 +311,7 @@ export const language = {
 		tokenValidationError: `Token validation error`,
 		invalidTokenSelection: `Invalid token selection`,
 		coverArt: `Cover Art`,
-		coverArtInfo: `Upload cover art for your audio file. This will be displayed when the audio is played. (Recommended size: 1:1 aspect ratio, 300 x 300 pixels).`,
+		coverArtInfo: `Upload cover art for your audio file. This will be displayed when the audio is played. File must be under 100kb. (Recommended size: 1:1 aspect ratio, 300 x 300 pixels).`,
 		coverArtDescription: `Upload an image that represents your audio`,
 		uploadCoverArt: `Upload cover art`,
 		editCoverArt: `Edit cover art`,

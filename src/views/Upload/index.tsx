@@ -13,6 +13,7 @@ import {
 	REDIRECTS,
 	TAGS,
 } from 'helpers/config';
+import { analyzeMusicNFTs, generateTrackId } from 'helpers/musicNFT';
 import { TagType, UploadType } from 'helpers/types';
 import { fileToBuffer, formatAddress, stripFileExtension } from 'helpers/utils';
 import { hideDocumentBody, showDocumentBody } from 'helpers/window';
@@ -243,6 +244,19 @@ export default function Upload() {
 							// Upload cover art as a separate transaction
 							const coverArtTxId = await permawebProvider.libs.resolveTransaction(element.coverArt);
 							asset.metadata.coverArt = coverArtTxId;
+
+							// Generate music NFT unique identifiers
+							const timestamp = Date.now();
+							const trackId = generateTrackId(arProvider.walletAddress, element.file.name, timestamp);
+							asset.metadata.trackId = trackId;
+
+							// Add album ID if this is part of a collection
+							if (collectionId && uploadReducer.data.title) {
+								const albumId = `ALBUM_${arProvider.walletAddress}_${uploadReducer.data.title
+									.replace(/[^a-zA-Z0-9]/g, '')
+									.substring(0, 8)}`;
+								asset.metadata.albumId = albumId;
+							}
 						} catch (e: any) {
 							console.error('Failed to upload cover art:', e);
 							// Continue without cover art if upload fails

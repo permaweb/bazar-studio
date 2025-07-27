@@ -311,7 +311,7 @@ export const MAX_UPLOAD_SIZE = 10000000;
 export const UPLOAD_STEPS: UploadStepType[] = ['details', 'license', 'checks'];
 
 export const DEFAULT_ASSET_TOPICS = [
-	'music',
+	'Music',
 	'politics',
 	'gaming',
 	'crypto',
@@ -322,6 +322,9 @@ export const DEFAULT_ASSET_TOPICS = [
 	'education',
 	'history',
 	'comedy',
+	'Bazar Music',
+	'Cover Art',
+	'ALBUM',
 ];
 
 export const ALLOWED_THUMBNAIL_TYPES = 'image/png, image/jpeg, image/gif';
