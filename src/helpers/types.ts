@@ -179,7 +179,7 @@ export type ReduxActionType = {
 	payload: any;
 };
 
-export type FileMetadataType = { file: any; title: string; description: string };
+export type FileMetadataType = { file: any; title: string; description: string; coverArt?: string };
 
 export type UploadType = 'collection' | 'assets';
 
@@ -263,7 +263,7 @@ export type TableHeaderType = {
 	[key: string]: { width: string; align: AlignType; display: string | null };
 };
 
-export type ActiveFieldAddType = 'title' | 'description';
+export type ActiveFieldAddType = 'title' | 'description' | 'coverArt';
 
 export type GroupIndexType = { index: string; ids: string[] }[];
 

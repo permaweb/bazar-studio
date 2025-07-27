@@ -233,7 +233,21 @@ export default function Upload() {
 						transferable: uploadReducer.data.transferableTokens,
 					};
 
-					if (collectionId) asset.metadata = { collectionId };
+					// Add metadata
+					asset.metadata = {};
+					if (collectionId) asset.metadata.collectionId = collectionId;
+
+					// Add cover art for audio files
+					if (element.coverArt && contentType.startsWith('audio/')) {
+						try {
+							// Upload cover art as a separate transaction
+							const coverArtTxId = await permawebProvider.libs.resolveTransaction(element.coverArt);
+							asset.metadata.coverArt = coverArtTxId;
+						} catch (e: any) {
+							console.error('Failed to upload cover art:', e);
+							// Continue without cover art if upload fails
+						}
+					}
 
 					if (uploadReducer.data.hasLicense && uploadReducer.data.license)
 						asset.tags = buildLicenseTags(uploadReducer.data.license);

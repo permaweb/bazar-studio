@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 
 import { fadeIn1, open } from 'helpers/animations';
+import { STYLING } from 'helpers/config';
 
 export const Wrapper = styled.div`
 	width: 100%;
@@ -236,5 +237,81 @@ export const TMessage = styled.div`
 		color: ${(props) => props.theme.colors.font.alt1};
 		font-size: ${(props) => props.theme.typography.size.xxSmall};
 		font-weight: ${(props) => props.theme.typography.weight.bold};
+	}
+`;
+
+export const CoverArtWrapper = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+`;
+
+export const CoverArtUpload = styled.div`
+	display: flex;
+	justify-content: center;
+	align-items: center;
+`;
+
+export const CoverArtPreview = styled.div`
+	position: relative;
+	width: 200px;
+	height: 200px;
+	border-radius: ${STYLING.dimensions.radius.primary};
+	overflow: hidden;
+	border: 1px solid ${(props) => props.theme.colors.border.primary};
+
+	img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+`;
+
+export const CoverArtActions = styled.div`
+	position: absolute;
+	top: 10px;
+	right: 10px;
+`;
+
+export const CoverArtPlaceholder = styled.div`
+	width: 200px;
+	height: 200px;
+	border: 2px dashed ${(props) => props.theme.colors.border.primary};
+	border-radius: ${STYLING.dimensions.radius.primary};
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		border-color: ${(props) => props.theme.colors.border.alt1};
+		background: ${(props) => props.theme.colors.container.alt4.background};
+	}
+
+	svg {
+		height: 40px;
+		width: 40px;
+		fill: ${(props) => props.theme.colors.icon.primary.fill};
+		margin-bottom: 10px;
+	}
+
+	span {
+		color: ${(props) => props.theme.colors.font.alt1};
+		font-size: ${(props) => props.theme.typography.size.small};
+		font-weight: ${(props) => props.theme.typography.weight.medium};
+		text-align: center;
+	}
+`;
+
+export const CoverArtInfo = styled.div`
+	text-align: center;
+
+	span {
+		color: ${(props) => props.theme.colors.font.alt1};
+		font-size: ${(props) => props.theme.typography.size.xSmall};
+		font-weight: ${(props) => props.theme.typography.weight.medium};
+		line-height: 1.4;
 	}
 `;

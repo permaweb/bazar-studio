@@ -11,7 +11,16 @@ import PermawebLibs from '@permaweb/libs';
 import { readHandler } from 'api';
 
 import { Modal } from 'components/molecules/Modal';
-import { AO, API_CONFIG, AR_WALLETS, GATEWAYS, REDIRECTS, STORAGE, WALLET_PERMISSIONS } from 'helpers/config';
+import {
+	AO,
+	API_CONFIG,
+	AR_WALLETS,
+	GATEWAYS,
+	REDIRECTS,
+	STORAGE,
+	TOKEN_REGISTRY,
+	WALLET_PERMISSIONS,
+} from 'helpers/config';
 import { getARBalanceEndpoint, getTurboBalanceEndpoint } from 'helpers/endpoints';
 import { ProfileHeaderType, WalletEnum } from 'helpers/types';
 import { getARAmountFromWinc } from 'helpers/utils';
@@ -107,9 +116,13 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 	const [arBalance, setArBalance] = React.useState<number | null>(null);
 	const [turboBalance, setTurboBalance] = React.useState<number | string | null>(null);
-	const [tokenBalances, setTokenBalances] = React.useState<{ [address: string]: number } | null>({
-		[AO.defaultToken]: null,
-		[AO.pixl]: null,
+	const [tokenBalances, setTokenBalances] = React.useState<{ [address: string]: number } | null>(() => {
+		// Initialize with all available tokens
+		const initialBalances: { [address: string]: number } = {};
+		Object.keys(TOKEN_REGISTRY).forEach((tokenId) => {
+			initialBalances[tokenId] = null;
+		});
+		return initialBalances;
 	});
 	const [toggleTokenBalanceUpdate, setToggleTokenBalanceUpdate] = React.useState<boolean>(false);
 
@@ -258,52 +271,42 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 	React.useEffect(() => {
 		if (profile && profile.id) {
-			const fetchDefaultTokenBalance = async () => {
+			const fetchAllTokenBalances = async () => {
 				try {
-					const defaultTokenBalance = await readHandler({
-						processId: AO.defaultToken,
-						action: 'Balance',
-						tags: [{ name: 'Recipient', value: profile.id }],
-					});
-					setTokenBalances((prevBalances) => ({
-						...prevBalances,
-						[AO.defaultToken]: defaultTokenBalance || 0,
-					}));
+					const newBalances = { ...tokenBalances };
+
+					// Fetch balances for all available tokens
+					for (const tokenId of Object.keys(TOKEN_REGISTRY)) {
+						try {
+							const balance = await readHandler({
+								processId: tokenId,
+								action: 'Balance',
+								tags: [{ name: 'Recipient', value: profile.id }],
+							});
+							newBalances[tokenId] = balance || 0;
+						} catch (e) {
+							console.error(`Error fetching balance for token ${tokenId}:`, e);
+							newBalances[tokenId] = 0;
+						}
+					}
+
+					setTokenBalances(newBalances);
 				} catch (e) {
-					console.error(e);
+					console.error('Error fetching token balances:', e);
 				}
 			};
 
-			fetchDefaultTokenBalance();
+			fetchAllTokenBalances();
 		} else {
-			setTokenBalances({
-				[AO.defaultToken]: 0,
-				[AO.pixl]: 0,
+			const resetBalances: { [address: string]: number } = {};
+			Object.keys(TOKEN_REGISTRY).forEach((tokenId) => {
+				resetBalances[tokenId] = 0;
 			});
+			setTokenBalances(resetBalances);
 		}
 	}, [profile, toggleTokenBalanceUpdate]);
 
-	React.useEffect(() => {
-		if (profile && profile.id) {
-			const fetchPixlTokenBalance = async () => {
-				try {
-					const pixlTokenBalance = await readHandler({
-						processId: AO.pixl,
-						action: 'Balance',
-						tags: [{ name: 'Recipient', value: profile.id }],
-					});
-					setTokenBalances((prevBalances) => ({
-						...prevBalances,
-						[AO.pixl]: pixlTokenBalance || 0,
-					}));
-				} catch (e) {
-					console.error(e);
-				}
-			};
-
-			fetchPixlTokenBalance();
-		}
-	}, [profile, toggleTokenBalanceUpdate]);
+	// Removed separate PIXL token balance fetch since it's now handled in fetchAllTokenBalances
 
 	async function getTurboBalance() {
 		if (wallet && walletType) {

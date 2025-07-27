@@ -9,7 +9,13 @@ import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { Table } from 'components/molecules/Table';
 import { TurboBalanceFund } from 'components/molecules/TurboBalanceFund';
-import { ALLOWED_ASSET_TYPES, ASSETS, MAX_UPLOAD_SIZE } from 'helpers/config';
+import {
+	ALLOWED_ASSET_TYPES,
+	ALLOWED_THUMBNAIL_TYPES,
+	ASSETS,
+	MAX_THUMBNAIL_IMAGE_SIZE,
+	MAX_UPLOAD_SIZE,
+} from 'helpers/config';
 import { getTurboCostWincEndpoint } from 'helpers/endpoints';
 import { ActiveFieldAddType, AlignType, FileMetadataType, SequenceType } from 'helpers/types';
 import { getARAmountFromWinc, getByteSizeDisplay, stripFileExtension } from 'helpers/utils';
@@ -37,11 +43,38 @@ function FileDropdown(props: {
 
 	const [title, setTitle] = React.useState<string>('');
 	const [description, setDescription] = React.useState<string>('');
+	const [coverArt, setCoverArt] = React.useState<string>('');
+
+	const fileInputRef = React.useRef<any>(null);
 
 	React.useEffect(() => {
 		setTitle('');
 		setDescription('');
+		setCoverArt('');
 	}, [props.id]);
+
+	function handleCoverArtChange(e: React.ChangeEvent<HTMLInputElement>) {
+		if (e.target.files && e.target.files.length) {
+			const file = e.target.files[0];
+			if (file.type.startsWith('image/')) {
+				// Check file size (limit to 100KB like thumbnails)
+				if (file.size > MAX_THUMBNAIL_IMAGE_SIZE) {
+					alert(`Cover art file size must be under ${getByteSizeDisplay(MAX_THUMBNAIL_IMAGE_SIZE)}`);
+					return;
+				}
+
+				const reader = new FileReader();
+				reader.onload = (event: ProgressEvent<FileReader>) => {
+					if (event.target?.result) {
+						setCoverArt(event.target.result as string);
+					}
+				};
+				reader.readAsDataURL(file);
+			} else {
+				alert('Please select an image file for cover art');
+			}
+		}
+	}
 
 	function getFieldAdd() {
 		let header: string;
@@ -105,6 +138,58 @@ function FileDropdown(props: {
 					/>
 				);
 				break;
+			case 'coverArt':
+				header = language.editCoverArt;
+				body = (
+					<S.CoverArtWrapper>
+						<S.CoverArtUpload>
+							<input
+								ref={fileInputRef}
+								type={'file'}
+								onChange={handleCoverArtChange}
+								accept={ALLOWED_THUMBNAIL_TYPES}
+								style={{ display: 'none' }}
+							/>
+							{coverArt ? (
+								<S.CoverArtPreview>
+									<img src={coverArt} alt="Cover art preview" />
+									<S.CoverArtActions>
+										<IconButton
+											type={'primary'}
+											src={ASSETS.close}
+											handlePress={() => setCoverArt('')}
+											dimensions={{ wrapper: 21.5, icon: 8.5 }}
+										/>
+									</S.CoverArtActions>
+								</S.CoverArtPreview>
+							) : (
+								<S.CoverArtPlaceholder onClick={() => fileInputRef.current?.click()}>
+									<ReactSVG src={ASSETS.image} />
+									<span>{language.uploadCoverArt}</span>
+								</S.CoverArtPlaceholder>
+							)}
+						</S.CoverArtUpload>
+						<S.CoverArtInfo>
+							<span>{language.coverArtInfo}</span>
+						</S.CoverArtInfo>
+					</S.CoverArtWrapper>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							if (coverArt) {
+								props.handleAddField(props.data.file.name, coverArt, 'coverArt');
+							}
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={!coverArt}
+						noMinWidth
+					/>
+				);
+				break;
 		}
 
 		return (
@@ -148,6 +233,29 @@ function FileDropdown(props: {
 							>
 								{language.editDescription}
 							</S.LI>
+							{props.data.file.type.startsWith('audio/') && (
+								<>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('coverArt');
+										}}
+										disabled={false}
+									>
+										{props.data.coverArt ? language.editCoverArt : language.uploadCoverArt}
+									</S.LI>
+									{props.data.coverArt && (
+										<S.LI
+											onClick={() => {
+												props.handleAddField(props.data.file.name, '', 'coverArt');
+												setOpen(false);
+											}}
+											disabled={false}
+										>
+											{language.removeCoverArt}
+										</S.LI>
+									)}
+								</>
+							)}
 							<S.LI
 								onClick={() => {
 									props.handleRemoveFile(props.data.file.name);
@@ -261,6 +369,7 @@ export default function UploadAssets() {
 					...data,
 					...(fieldType === 'title' ? { title: value } : {}),
 					...(fieldType === 'description' ? { description: value } : {}),
+					...(fieldType === 'coverArt' ? { coverArt: value || undefined } : {}),
 				};
 			}
 			return data;
@@ -291,7 +400,7 @@ export default function UploadAssets() {
 	function getTableHeader() {
 		return {
 			fileName: {
-				width: '70%',
+				width: '60%',
 				align: 'left' as AlignType,
 				display: language.title,
 			},
@@ -299,6 +408,11 @@ export default function UploadAssets() {
 				width: '15%',
 				align: 'center' as AlignType,
 				display: language.description,
+			},
+			coverArt: {
+				width: '10%',
+				align: 'center' as AlignType,
+				display: language.coverArt,
 			},
 			actions: {
 				width: '15%',
@@ -325,6 +439,15 @@ export default function UploadAssets() {
 						description: (
 							<S.DDataWrapper>
 								<p>{`[ ${data.description ? '✓' : 'x'} ]`}</p>
+							</S.DDataWrapper>
+						),
+						coverArt: data.file.type.startsWith('audio/') ? (
+							<S.DDataWrapper>
+								<p>{`[ ${data.coverArt ? '✓' : 'x'} ]`}</p>
+							</S.DDataWrapper>
+						) : (
+							<S.DDataWrapper>
+								<p>-</p>
 							</S.DDataWrapper>
 						),
 						actions: (
