@@ -11,6 +11,7 @@ import { ArweaveProvider } from 'providers/ArweaveProvider';
 import { CustomThemeProvider } from 'providers/CustomThemeProvider';
 import { LanguageProvider } from 'providers/LanguageProvider';
 import { PermawebProvider } from 'providers/PermawebProvider';
+import { TokenProvider } from 'providers/TokenProvider';
 import { persistor, store } from 'store';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
@@ -29,10 +30,12 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 					>
 						<ArweaveProvider>
 							<PermawebProvider>
-								<HashRouter>
-									<GlobalStyle />
-									<App />
-								</HashRouter>
+								<TokenProvider>
+									<HashRouter>
+										<GlobalStyle />
+										<App />
+									</HashRouter>
+								</TokenProvider>
 							</PermawebProvider>
 						</ArweaveProvider>
 					</AOSyncProvider>

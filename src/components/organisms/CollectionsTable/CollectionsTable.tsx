@@ -19,6 +19,7 @@ import { checkValidAddress, formatAddress, getTagValue } from 'helpers/utils';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
 import { usePermawebProvider } from 'providers/PermawebProvider';
+import { useTokenProvider } from 'providers/TokenProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
 import { CloseHandler } from 'wrappers/CloseHandler';
@@ -30,6 +31,7 @@ const DENOMINATION = Math.pow(10, 12);
 function CollectionDropdown(props: { id: string; title: string }) {
 	const arProvider = useArweaveProvider();
 	const permawebProvider = usePermawebProvider();
+	const tokenProvider = useTokenProvider();
 
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
@@ -101,6 +103,19 @@ function CollectionDropdown(props: { id: string; title: string }) {
 	// }
 
 	async function handleSubmit() {
+		// Token validation
+		if (!tokenProvider.selectedToken || !tokenProvider.selectedToken.id) {
+			setListingLog(language.invalidTokenSelection);
+			return;
+		}
+
+		// Check if selected token exists in available tokens
+		const isValidToken = tokenProvider.availableTokens.some((token) => token.id === tokenProvider.selectedToken.id);
+		if (!isValidToken) {
+			setListingLog(language.tokenValidationError);
+			return;
+		}
+
 		console.log(collection);
 		if (arProvider.wallet && arProvider.profile?.id && arProvider.profile.id && collection?.Assets?.length) {
 			setLoading(true);
@@ -136,7 +151,7 @@ function CollectionDropdown(props: { id: string; title: string }) {
 
 						if (balance > 0) {
 							const dominantToken = assetId;
-							const swapToken = AO.defaultToken;
+							const swapToken = tokenProvider.selectedToken.id;
 							const quantity = Math.floor((percentage / 100) * balance).toString();
 							const unitPrice = (price * DENOMINATION).toString();
 

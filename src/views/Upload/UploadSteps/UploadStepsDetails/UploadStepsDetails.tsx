@@ -11,8 +11,10 @@ import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { CollectionsTable } from 'components/organisms/CollectionsTable';
 import { ASSETS, DEFAULT_ASSET_TOPICS, GATEWAYS, RENDERERS } from 'helpers/config';
+import { analyzeMusicNFTs, getMusicNFTSuggestions } from 'helpers/musicNFT';
 import { RendererType, ValidationType } from 'helpers/types';
 import { formatRequiredField } from 'helpers/utils';
+import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
@@ -28,6 +30,8 @@ export default function UploadStepsDetails() {
 
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
+
+	const arProvider = useArweaveProvider();
 
 	const [topicOptions, setTopicOptions] = React.useState<string[]>([
 		...new Set([...DEFAULT_ASSET_TOPICS, ...uploadReducer.data.topics]),
@@ -86,6 +90,53 @@ export default function UploadStepsDetails() {
 
 		return () => clearTimeout(timeoutId);
 	}, [uploadReducer.data.title]);
+
+	// Auto-detect music NFTs and suggest topics
+	React.useEffect(() => {
+		if (uploadReducer.data.contentList && uploadReducer.data.contentList.length > 0 && arProvider.walletAddress) {
+			const musicNFTs = analyzeMusicNFTs(
+				uploadReducer.data.contentList,
+				arProvider.walletAddress,
+				uploadReducer.data.title
+			);
+
+			if (musicNFTs.length > 0) {
+				// Auto-select music NFT topics if not already selected
+				const currentTopics = uploadReducer.data.topics;
+				const musicTopics = ['Music', 'Bazar Music', 'Cover Art'];
+
+				// Only add ALBUM if this is a collection upload or if a collection is selected
+				if (uploadReducer.uploadType === 'collection' || uploadReducer.data.collectionId) {
+					musicTopics.push('ALBUM');
+				}
+
+				const missingTopics = musicTopics.filter((topic) => !currentTopics.includes(topic));
+
+				if (missingTopics.length > 0) {
+					const newTopics = [...currentTopics, ...missingTopics];
+					dispatch(
+						uploadActions.setUpload([
+							{
+								field: 'topics',
+								data: newTopics,
+							},
+						])
+					);
+				}
+
+				// Update topic options to include music genre suggestions
+				const genreSuggestions = getMusicNFTSuggestions();
+				const allTopics = [...new Set([...DEFAULT_ASSET_TOPICS, ...genreSuggestions, ...currentTopics])];
+				setTopicOptions(allTopics);
+			}
+		}
+	}, [
+		uploadReducer.data.contentList,
+		arProvider.walletAddress,
+		uploadReducer.data.title,
+		uploadReducer.uploadType,
+		uploadReducer.data.collectionId,
+	]);
 
 	async function handleTitleCheck() {
 		if (uploadReducer.data.title) {
@@ -343,6 +394,32 @@ export default function UploadStepsDetails() {
 								);
 							})}
 						</S.TBody>
+						{/* Music NFT Detection Indicator */}
+						{uploadReducer.data.contentList &&
+							uploadReducer.data.contentList.length > 0 &&
+							arProvider.walletAddress &&
+							(() => {
+								const musicNFTs = analyzeMusicNFTs(
+									uploadReducer.data.contentList,
+									arProvider.walletAddress,
+									uploadReducer.data.title
+								);
+
+								if (musicNFTs.length > 0) {
+									const musicTopics = ['Music', 'Bazar Music', 'Cover Art'];
+									if (uploadReducer.uploadType === 'collection' || uploadReducer.data.collectionId) {
+										musicTopics.push('ALBUM');
+									}
+
+									return (
+										<S.MusicNFTInfo>
+											<span>Music NFT detected! Auto-selected: {musicTopics.join(', ')}</span>
+											<span>Tip: Consider adding a genre tag (e.g., hip-hop/rap, electronic, rock)</span>
+										</S.MusicNFTInfo>
+									);
+								}
+								return null;
+							})()}
 					</S.TWrapper>
 					<S.RWrapper>
 						<S.RHeader>

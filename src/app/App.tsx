@@ -25,17 +25,14 @@ export default function App() {
 	React.useEffect(() => {
 		(async function () {
 			if (hasCheckedProfileRef.current) return;
-			if (arProvider.profile?.id) {
+			if (arProvider.profile && typeof arProvider.profile.id === 'string' && arProvider.profile.id.length === 43) {
 				const userVersion = (arProvider as any).profile.version;
 				if (!userVersion || userVersion !== CurrentZoneVersion) {
-					console.log('User profile version does match current version, updating...');
-
+					console.log('Calling updateProfileVersion with:', arProvider.profile, 'processId:', arProvider.profile.id);
 					await permawebProvider.libs.updateProfileVersion({
 						profileId: arProvider.profile.id,
 					});
-
 					console.log('Updated profile version.');
-
 					hasCheckedProfileRef.current = true;
 				}
 			}
