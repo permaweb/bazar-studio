@@ -286,3 +286,40 @@ export const MusicNFTInfo = styled.div`
 		}
 	}
 `;
+
+export const RoyaltyWrapper = styled.div`
+	margin: 30px 0 0 0;
+`;
+
+export const RoyaltyHeader = styled.div`
+	span {
+		color: ${(props) => props.theme.colors.font.primary};
+		font-size: ${(props) => props.theme.typography.size.xSmall};
+		font-weight: ${(props) => props.theme.typography.weight.bold};
+		display: block;
+		margin: 0 0 10px 0;
+	}
+`;
+
+export const RoyaltyInfo = styled.div`
+	margin: 2.5px 0 10px 0;
+	span {
+		color: ${(props) => props.theme.colors.font.alt1};
+		font-size: ${(props) => props.theme.typography.size.xxSmall};
+		font-weight: ${(props) => props.theme.typography.weight.bold};
+	}
+`;
+
+export const RoyaltyToggle = styled.div`
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 15px 0;
+	span {
+		color: ${(props) => props.theme.colors.font.primary};
+		font-size: ${(props) => props.theme.typography.size.xSmall};
+		font-weight: ${(props) => props.theme.typography.weight.bold};
+		display: block;
+		margin: 0 10px 0 0;
+	}
+`;

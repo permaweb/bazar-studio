@@ -62,10 +62,14 @@ export default function UploadStepsDetails() {
 					uploadReducer.data.topics.length &&
 					!invalidTitle.status &&
 					!getInvalidContentTokens().status &&
-					!getInvalidDescription().status;
+					!getInvalidDescription().status &&
+					!getInvalidRoyaltyPercentage().status;
 				break;
 			case 'assets':
-				isDataValid = uploadReducer.data.topics.length && !getInvalidContentTokens().status;
+				isDataValid =
+					uploadReducer.data.topics.length &&
+					!getInvalidContentTokens().status &&
+					!getInvalidRoyaltyPercentage().status;
 				break;
 		}
 
@@ -76,6 +80,8 @@ export default function UploadStepsDetails() {
 		uploadReducer.data.description,
 		uploadReducer.data.contentTokens,
 		uploadReducer.data.topics,
+		uploadReducer.data.royaltyPercentage,
+		uploadReducer.data.hasRoyalties,
 		invalidTitle.status,
 	]);
 
@@ -150,12 +156,15 @@ export default function UploadStepsDetails() {
 		}
 	}
 
-	function handleInputChange(e: any, field: 'title' | 'description' | 'collectionCode' | 'contentTokens') {
+	function handleInputChange(
+		e: any,
+		field: 'title' | 'description' | 'collectionCode' | 'contentTokens' | 'royaltyPercentage'
+	) {
 		dispatch(
 			uploadActions.setUpload([
 				{
 					field: field,
-					data: e.target.value,
+					data: field === 'contentTokens' || field === 'royaltyPercentage' ? Number(e.target.value) : e.target.value,
 				},
 			])
 		);
@@ -178,6 +187,17 @@ export default function UploadStepsDetails() {
 				{
 					field: 'transferableTokens',
 					data: !uploadReducer.data.transferableTokens,
+				},
+			])
+		);
+	}
+
+	function handleRoyaltiesChange() {
+		dispatch(
+			uploadActions.setUpload([
+				{
+					field: 'hasRoyalties',
+					data: !uploadReducer.data.hasRoyalties,
 				},
 			])
 		);
@@ -247,6 +267,17 @@ export default function UploadStepsDetails() {
 			return {
 				status: true,
 				message: language.invalidContentTokens,
+			};
+		}
+		return { status: false, message: null };
+	}
+
+	function getInvalidRoyaltyPercentage() {
+		const royaltyPercentage = Number(uploadReducer.data.royaltyPercentage);
+		if (!Number.isInteger(royaltyPercentage) || royaltyPercentage < 0 || royaltyPercentage > 50) {
+			return {
+				status: true,
+				message: 'Royalty percentage must be between 0 and 50%',
 			};
 		}
 		return { status: false, message: null };
@@ -457,6 +488,35 @@ export default function UploadStepsDetails() {
 							disabled={false}
 						/>
 					</S.TRWrapper>
+					<S.RoyaltyWrapper>
+						<S.RoyaltyHeader>
+							<span>Creator Royalties</span>
+						</S.RoyaltyHeader>
+						<S.RoyaltyInfo>
+							<span>Set up royalty payments for secondary sales. You'll receive a percentage of each resale.</span>
+						</S.RoyaltyInfo>
+						<S.RoyaltyToggle>
+							<span>Enable creator royalties</span>
+							<Checkbox
+								checked={uploadReducer.data.hasRoyalties}
+								handleSelect={handleRoyaltiesChange}
+								disabled={false}
+							/>
+						</S.RoyaltyToggle>
+						{uploadReducer.data.hasRoyalties && (
+							<FormField
+								type={'number'}
+								label={'Royalty Percentage'}
+								value={uploadReducer.data.royaltyPercentage}
+								onChange={(e: any) => handleInputChange(e, 'royaltyPercentage')}
+								disabled={!uploadReducer.data.hasRoyalties}
+								invalid={getInvalidRoyaltyPercentage()}
+								tooltip={'Percentage of secondary sales that goes to the creator (0-50%)'}
+								required
+								hideErrorMessage
+							/>
+						)}
+					</S.RoyaltyWrapper>
 				</S.SectionWrapper>
 			</S.Wrapper>
 			{showTopicAdd && (

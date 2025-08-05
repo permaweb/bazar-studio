@@ -238,6 +238,12 @@ export default function Upload() {
 					asset.metadata = {};
 					if (collectionId) asset.metadata.collectionId = collectionId;
 
+					// Add royalty information
+					if (uploadReducer.data.hasRoyalties) {
+						asset.metadata.royaltyPercentage = uploadReducer.data.royaltyPercentage;
+						asset.metadata.hasRoyalties = true;
+					}
+
 					// Add cover art for audio files
 					if (element.coverArt && contentType.startsWith('audio/')) {
 						try {

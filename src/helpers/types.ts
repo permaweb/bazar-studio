@@ -203,7 +203,9 @@ export type UploadPayloadType =
 	| 'banner'
 	| 'thumbnail'
 	| 'hasLicense'
-	| 'activeLicense';
+	| 'activeLicense'
+	| 'royaltyPercentage'
+	| 'hasRoyalties';
 
 export type UploadPayloadDataType = { field: UploadPayloadType; data: any };
 
@@ -226,6 +228,8 @@ export type UploadReduxType = {
 		type: string;
 		hasLicense: boolean;
 		activeLicense: string;
+		royaltyPercentage: number;
+		hasRoyalties: boolean;
 	};
 	currentStep: UploadStepType;
 	nextStepDisabled: boolean;
