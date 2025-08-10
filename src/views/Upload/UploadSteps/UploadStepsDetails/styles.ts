@@ -65,6 +65,29 @@ export const TRWrapper = styled(CWrapper)`
 	margin: 20px 0 0 0;
 `;
 
+export const MetadataTraitsWrapper = styled.div`
+	margin: 40px 0 0 0;
+`;
+
+export const MetadataTraitsHeader = styled.div`
+	margin-bottom: 15px;
+
+	span {
+		font-size: ${(props) => props.theme.typography.size.base};
+		font-weight: ${(props) => props.theme.typography.weight.bold};
+		color: ${(props) => props.theme.colors.font.primary};
+	}
+`;
+
+export const MetadataTraitsInfo = styled.div`
+	margin-top: 5px;
+
+	span {
+		font-size: ${(props) => props.theme.typography.size.small};
+		color: ${(props) => props.theme.colors.font.alt1};
+	}
+`;
+
 export const TWrapper = styled.div`
 	margin: 60px 0 0 0;
 `;

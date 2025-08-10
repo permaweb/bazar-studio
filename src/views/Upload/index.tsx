@@ -238,6 +238,16 @@ export default function Upload() {
 					asset.metadata = {};
 					if (collectionId) asset.metadata.collectionId = collectionId;
 
+					// Add metadata traits if they exist (per-asset traits only)
+					if (element.traits && element.traits.length > 0) {
+						asset.metadata.OriginalMetadata = JSON.stringify({
+							image: `${assetName}.png`,
+							name: assetName,
+							attributes: element.traits,
+							description: assetDescription,
+						});
+					}
+
 					// Add cover art for audio files
 					if (element.coverArt && contentType.startsWith('audio/')) {
 						try {
