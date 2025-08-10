@@ -179,7 +179,16 @@ export type ReduxActionType = {
 	payload: any;
 };
 
-export type FileMetadataType = { file: any; title: string; description: string; coverArt?: string };
+export type FileMetadataType = {
+	file: any;
+	title: string;
+	description: string;
+	coverArt?: string;
+	traits?: Array<{
+		trait_type: string;
+		value: string;
+	}>;
+};
 
 export type UploadType = 'collection' | 'assets';
 
@@ -203,7 +212,8 @@ export type UploadPayloadType =
 	| 'banner'
 	| 'thumbnail'
 	| 'hasLicense'
-	| 'activeLicense';
+	| 'activeLicense'
+	| 'metadataTraits';
 
 export type UploadPayloadDataType = { field: UploadPayloadType; data: any };
 
@@ -226,6 +236,10 @@ export type UploadReduxType = {
 		type: string;
 		hasLicense: boolean;
 		activeLicense: string;
+		metadataTraits: Array<{
+			trait_type: string;
+			value: string;
+		}>;
 	};
 	currentStep: UploadStepType;
 	nextStepDisabled: boolean;
@@ -263,7 +277,7 @@ export type TableHeaderType = {
 	[key: string]: { width: string; align: AlignType; display: string | null };
 };
 
-export type ActiveFieldAddType = 'title' | 'description' | 'coverArt';
+export type ActiveFieldAddType = 'title' | 'description' | 'coverArt' | 'traits';
 
 export type GroupIndexType = { index: string; ids: string[] }[];
 

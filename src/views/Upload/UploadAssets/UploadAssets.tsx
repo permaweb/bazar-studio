@@ -9,6 +9,8 @@ import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { Table } from 'components/molecules/Table';
 import { TurboBalanceFund } from 'components/molecules/TurboBalanceFund';
+import { BulkTraitEditor } from 'components/organisms/BulkTraitEditor';
+import { MetadataTraits } from 'components/organisms/MetadataTraits';
 import {
 	ALLOWED_ASSET_TYPES,
 	ALLOWED_THUMBNAIL_TYPES,
@@ -34,6 +36,7 @@ function FileDropdown(props: {
 	data: FileMetadataType;
 	handleRemoveFile: (fileName: string) => void;
 	handleAddField: (fileName: string, value: string, fieldType: ActiveFieldAddType) => void;
+	allAssets: FileMetadataType[];
 }) {
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
@@ -55,6 +58,28 @@ function FileDropdown(props: {
 		}
 		setActiveFieldAdd(null); // Close modal if open
 		setOpen(false);
+	}
+
+	function getExistingTraits() {
+		// Get all traits from other assets in the upload to suggest templates
+		const allTraits = props.allAssets
+			.filter((asset: any) => asset.traits && asset.traits.length > 0)
+			.flatMap((asset: any) => asset.traits);
+
+		// Group by trait_type and get unique values
+		const traitTemplates = allTraits.reduce((acc: any, trait: any) => {
+			if (!acc[trait.trait_type]) {
+				acc[trait.trait_type] = new Set();
+			}
+			acc[trait.trait_type].add(trait.value);
+			return acc;
+		}, {});
+
+		// Convert to array format
+		return Object.entries(traitTemplates).map(([trait_type, values]) => ({
+			trait_type,
+			values: Array.from(values as Set<string>),
+		}));
 	}
 
 	React.useEffect(() => {
@@ -207,6 +232,40 @@ function FileDropdown(props: {
 					/>
 				);
 				break;
+			case 'traits':
+				header = 'Edit Metadata Traits';
+				body = (
+					<MetadataTraits
+						traits={props.data.traits || []}
+						onAddTrait={(trait) => {
+							const updatedTraits = [...(props.data.traits || []), trait];
+							props.handleAddField(props.data.file.name, JSON.stringify(updatedTraits), 'traits');
+						}}
+						onRemoveTrait={(index) => {
+							const updatedTraits = (props.data.traits || []).filter((_, i) => i !== index);
+							props.handleAddField(props.data.file.name, JSON.stringify(updatedTraits), 'traits');
+						}}
+						assetCount={1}
+						showTemplates={true}
+						existingTraits={getExistingTraits()}
+						onApplyTemplate={(templateTraits) => {
+							props.handleAddField(props.data.file.name, JSON.stringify(templateTraits), 'traits');
+						}}
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
 		}
 
 		return (
@@ -249,6 +308,14 @@ function FileDropdown(props: {
 								disabled={false}
 							>
 								{language.editDescription}
+							</S.LI>
+							<S.LI
+								onClick={() => {
+									setActiveFieldAdd('traits');
+								}}
+								disabled={false}
+							>
+								{props.data.traits && props.data.traits.length > 0 ? 'Edit Traits' : 'Add Traits'}
 							</S.LI>
 							{props.data.file.type.startsWith('audio/') && (
 								<>
@@ -381,6 +448,7 @@ export default function UploadAssets() {
 					...(fieldType === 'title' ? { title: value } : {}),
 					...(fieldType === 'description' ? { description: value } : {}),
 					...(fieldType === 'coverArt' ? { coverArt: value || undefined } : {}),
+					...(fieldType === 'traits' ? { traits: JSON.parse(value) } : {}),
 				};
 			}
 			return data;
@@ -394,6 +462,20 @@ export default function UploadAssets() {
 				},
 			])
 		);
+	}
+
+	function handleBulkApplyTraits(assetNames: string[], trait: { trait_type: string; value: string }) {
+		const updatedData = uploadReducer.data.contentList.map((data: FileMetadataType) => {
+			if (assetNames.includes(data.file.name)) {
+				const existingTraits = data.traits || [];
+				return {
+					...data,
+					traits: [...existingTraits, trait],
+				};
+			}
+			return data;
+		});
+		dispatch(uploadActions.setUpload([{ field: 'contentList', data: updatedData }]));
 	}
 
 	function handleRemoveFile(fileName: string) {
@@ -469,6 +551,7 @@ export default function UploadAssets() {
 								handleAddField={(fileName: string, value: string, fieldType: ActiveFieldAddType) =>
 									handleAddField(fileName, value, fieldType)
 								}
+								allAssets={uploadReducer.data.contentList}
 							/>
 						),
 					},
@@ -553,6 +636,11 @@ export default function UploadAssets() {
 						noMinWidth
 					/>
 				</S.Header>
+
+				{/* Bulk Trait Editor for Large Collections */}
+				{uploadReducer.data.contentList && uploadReducer.data.contentList.length > 5 && (
+					<BulkTraitEditor assets={uploadReducer.data.contentList} onApplyToAssets={handleBulkApplyTraits} />
+				)}
 				<S.Body>{getFileWrapper()}</S.Body>
 				<input
 					ref={fileInputRef}

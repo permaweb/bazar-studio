@@ -10,6 +10,7 @@ import { FormField } from 'components/atoms/FormField';
 import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { CollectionsTable } from 'components/organisms/CollectionsTable';
+import { MetadataTraits } from 'components/organisms/MetadataTraits';
 import { ASSETS, DEFAULT_ASSET_TOPICS, GATEWAYS, RENDERERS } from 'helpers/config';
 import { analyzeMusicNFTs, getMusicNFTSuggestions } from 'helpers/musicNFT';
 import { RendererType, ValidationType } from 'helpers/types';
@@ -231,6 +232,8 @@ export default function UploadStepsDetails() {
 		}
 	}
 
+	// Removed global trait handlers - only per-asset traits are supported
+
 	function getInvalidDescription() {
 		if (uploadReducer.data.description && uploadReducer.data.description.length > MAX_DESCRIPTION_LENGTH) {
 			return {
@@ -421,6 +424,7 @@ export default function UploadStepsDetails() {
 								return null;
 							})()}
 					</S.TWrapper>
+					{/* Removed global traits - only per-asset traits are supported */}
 					<S.RWrapper>
 						<S.RHeader>
 							<span>{language.renderer}</span>
