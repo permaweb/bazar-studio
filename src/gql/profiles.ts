@@ -13,7 +13,7 @@ export async function getProfiles(args: { addresses: string[]; profileVersions?:
 
 	for (let i = 0; i < args.addresses.length; i += PAGINATORS.default) {
 		const gqlResponse: AGQLResponseType = await getGQLData({
-			gateway: GATEWAYS.arweave,
+			gateway: null, // Let getGQLData use Wayfinder if available
 			ids: null,
 			tagFilters: [
 				{

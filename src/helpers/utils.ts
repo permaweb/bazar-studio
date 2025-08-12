@@ -1,6 +1,7 @@
 import Arweave from 'arweave';
 
-import { API_CONFIG, GATEWAYS, STORAGE } from './config';
+import { createArweaveInstance } from './arweave';
+import { API_CONFIG, STORAGE } from './config';
 import { DateType, ProfileType } from './types';
 
 export function checkValidAddress(address: string | null) {
@@ -141,15 +142,22 @@ export function getTurboBalance(amount: number | string | null) {
 	return amount !== null ? (typeof amount === 'string' ? amount : formatTurboAmount(amount)) : '**** Credits';
 }
 
-export function getARAmountFromWinc(amount: number) {
-	const arweave = Arweave.init({
-		host: GATEWAYS.arweave,
-		protocol: API_CONFIG.protocol,
-		port: API_CONFIG.port,
-		timeout: API_CONFIG.timeout,
-		logging: API_CONFIG.logging,
-	});
-	return Math.floor(+arweave.ar.winstonToAr(amount.toString()) * 1e6) / 1e6;
+export async function getARAmountFromWinc(amount: number) {
+	try {
+		const arweave = await createArweaveInstance();
+		return Math.floor(+arweave.ar.winstonToAr(amount.toString()) * 1e6) / 1e6;
+	} catch (error) {
+		console.error('Failed to get AR amount with Wayfinder, using fallback:', error);
+		// Fallback to default Arweave instance
+		const arweave = Arweave.init({
+			host: 'arweave.net',
+			protocol: 'https',
+			port: 443,
+			timeout: 60000,
+			logging: false,
+		});
+		return Math.floor(+arweave.ar.winstonToAr(amount.toString()) * 1e6) / 1e6;
+	}
 }
 
 export function formatTurboAmount(amount: number) {

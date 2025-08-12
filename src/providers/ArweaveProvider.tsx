@@ -11,21 +11,14 @@ import PermawebLibs from '@permaweb/libs';
 import { readHandler } from 'api';
 
 import { Modal } from 'components/molecules/Modal';
-import {
-	AO,
-	API_CONFIG,
-	AR_WALLETS,
-	GATEWAYS,
-	REDIRECTS,
-	STORAGE,
-	TOKEN_REGISTRY,
-	WALLET_PERMISSIONS,
-} from 'helpers/config';
+import { createArweaveInstance } from 'helpers/arweave';
+import { AO, API_CONFIG, AR_WALLETS, REDIRECTS, STORAGE, TOKEN_REGISTRY, WALLET_PERMISSIONS } from 'helpers/config';
 import { getARBalanceEndpoint, getTurboBalanceEndpoint } from 'helpers/endpoints';
 import { ProfileHeaderType, WalletEnum } from 'helpers/types';
 import { getARAmountFromWinc } from 'helpers/utils';
 import Othent from 'helpers/wallet';
 import { useLanguageProvider } from 'providers/LanguageProvider';
+import { useWayfinderProvider } from 'providers/WayfinderProvider';
 
 import * as S from './styles';
 
@@ -105,6 +98,7 @@ function WalletList(props: { handleConnect: any }) {
 export function ArweaveProvider(props: ArweaveProviderProps) {
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
+	const { isInitialized: wayfinderInitialized } = useWayfinderProvider();
 
 	const wallets = AR_WALLETS;
 
@@ -154,20 +148,37 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	}, []);
 
 	React.useEffect(() => {
-		const deps = {
-			ao: connect({ MODE: 'legacy' }),
-			arweave: Arweave.init({}),
-			signer: wallet ? createSigner(wallet) : null,
-		};
+		(async function () {
+			try {
+				const arweave = await createArweaveInstance();
+				const deps = {
+					ao: connect({ MODE: 'legacy' }),
+					arweave: arweave,
+					signer: wallet ? createSigner(wallet) : null,
+				};
 
-		setLibs(PermawebLibs.init(deps));
+				setLibs(PermawebLibs.init(deps));
+			} catch (error) {
+				console.error('Failed to initialize ArweaveProvider with Wayfinder:', error);
+				// Fallback to default Arweave instance
+				const deps = {
+					ao: connect({ MODE: 'legacy' }),
+					arweave: Arweave.init({}),
+					signer: wallet ? createSigner(wallet) : null,
+				};
+
+				setLibs(PermawebLibs.init(deps));
+			}
+		})();
 	}, [wallet]);
 
 	React.useEffect(() => {
 		(async function () {
 			if (walletAddress) {
 				try {
-					setArBalance(await getARBalance(walletAddress));
+					// Use sync version for immediate response
+					const balance = await getARBalance(walletAddress);
+					setArBalance(balance);
 				} catch (e: any) {
 					console.error(e);
 				}
@@ -312,13 +323,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 		if (wallet && walletType) {
 			try {
 				setTurboBalance(`${language.loading}...`);
-				const arweave = Arweave.init({
-					host: GATEWAYS.arweave,
-					protocol: API_CONFIG.protocol,
-					port: API_CONFIG.port,
-					timeout: API_CONFIG.timeout,
-					logging: API_CONFIG.logging,
-				});
+				const arweave = await createArweaveInstance();
 
 				const publicKey = await wallet.getActivePublicKey();
 				const nonce = randomBytes(16).toString('hex');
@@ -337,7 +342,8 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 				});
 
 				if (result.ok) {
-					setTurboBalance(getARAmountFromWinc(Number((await result.json()).winc)));
+					const amount = await getARAmountFromWinc(Number((await result.json()).winc));
+					setTurboBalance(amount);
 				} else {
 					setTurboBalance(0);
 				}
@@ -455,7 +461,8 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	async function getARBalance(walletAddress: string) {
 		const rawBalance = await fetch(getARBalanceEndpoint(walletAddress));
 		const jsonBalance = await rawBalance.json();
-		return jsonBalance / 1e12;
+		const balance = jsonBalance / 1e12;
+		return Number(balance.toFixed(12));
 	}
 
 	return (

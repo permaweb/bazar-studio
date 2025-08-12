@@ -141,7 +141,7 @@ export default function UploadStepsDetails() {
 	async function handleTitleCheck() {
 		if (uploadReducer.data.title) {
 			setValidatingTitle(true);
-			if (await checkDuplicateTitle({ title: uploadReducer.data.title, gateway: GATEWAYS.arweave })) {
+			if (await checkDuplicateTitle({ title: uploadReducer.data.title, gateway: null })) {
 				setInvalidTitle({ status: true, message: language.collectionExists });
 			} else {
 				setInvalidTitle({ status: false, message: null });

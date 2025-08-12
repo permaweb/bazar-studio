@@ -48,7 +48,7 @@ export async function getCommentsByAddress(args: {
 	};
 	try {
 		const gqlResponse: AGQLResponseType = await getGQLData({
-			gateway: GATEWAYS.arweave,
+			gateway: null, // Let getGQLData use Wayfinder if available
 			ids: null,
 			tagFilters: [
 				{

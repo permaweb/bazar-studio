@@ -1,17 +1,31 @@
 import Arweave from 'arweave';
 import { createDataItemSigner, dryrun, message, result, results } from '@permaweb/aoconnect';
 
-import { AO, API_CONFIG, CONTENT_TYPES, GATEWAYS } from 'helpers/config';
+import { createArweaveInstance } from 'helpers/arweave';
+import { AO, API_CONFIG, CONTENT_TYPES } from 'helpers/config';
 import { TagType } from 'helpers/types';
 import { getTagValue } from 'helpers/utils';
 
-const arweave = Arweave.init({
-	host: GATEWAYS.arweave,
-	protocol: API_CONFIG.protocol,
-	port: API_CONFIG.port,
-	timeout: API_CONFIG.timeout,
-	logging: API_CONFIG.logging,
-});
+// Initialize Arweave instance with Wayfinder
+let arweave: Arweave;
+
+async function initializeArweave() {
+	if (!arweave) {
+		try {
+			arweave = await createArweaveInstance();
+		} catch (error) {
+			console.error('Failed to initialize Arweave with Wayfinder, using fallback:', error);
+			arweave = Arweave.init({
+				host: 'arweave.net',
+				protocol: 'https',
+				port: 443,
+				timeout: 60000,
+				logging: false,
+			});
+		}
+	}
+	return arweave;
+}
 
 export async function createTransaction(args: { content: any; contentType: string; tags: TagType[] }) {
 	let finalContent: any;
@@ -24,7 +38,8 @@ export async function createTransaction(args: { content: any; contentType: strin
 			break;
 	}
 	try {
-		const txRes = await arweave.createTransaction({ data: finalContent }, 'use_wallet');
+		const arweaveInstance = await initializeArweave();
+		const txRes = await arweaveInstance.createTransaction({ data: finalContent }, 'use_wallet');
 		args.tags.forEach((tag: TagType) => txRes.addTag(tag.name, tag.value));
 		const response = await global.window.arweaveWallet.dispatch(txRes);
 		return response.id;

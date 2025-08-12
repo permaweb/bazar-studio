@@ -1,4 +1,5 @@
-import { CURSORS, GATEWAYS, PAGINATORS } from 'helpers/config';
+import { CURSORS, PAGINATORS } from 'helpers/config';
+import { getGraphQLEndpoint } from 'helpers/graphql';
 import { AGQLResponseType, GQLArgsType, GQLNodeResponseType } from 'helpers/types';
 
 export async function getGQLData(args: GQLArgsType): Promise<AGQLResponseType> {
@@ -13,7 +14,21 @@ export async function getGQLData(args: GQLArgsType): Promise<AGQLResponseType> {
 	}
 
 	try {
-		const response = await fetch(`https://${args.gateway}/graphql`, {
+		// Use provided gateway or try Wayfinder, fallback to default
+		let endpoint: string;
+		if (args.gateway) {
+			endpoint = `https://${args.gateway}/graphql`;
+		} else {
+			// Try to use Wayfinder if no gateway specified
+			try {
+				const { getGraphQLEndpoint } = await import('helpers/graphql');
+				endpoint = await getGraphQLEndpoint();
+			} catch (error) {
+				// Fallback to default
+				endpoint = 'https://arweave.net/graphql';
+			}
+		}
+		const response = await fetch(endpoint, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: getQuery(args),
@@ -60,10 +75,13 @@ function getQuery(args: GQLArgsType): string {
 	let order: string = '';
 
 	switch (args.gateway) {
-		case GATEWAYS.arweave:
+		case 'arweave.net':
 			break;
-		case GATEWAYS.goldsky:
+		case 'arweave-search.goldsky.com':
 			txCount = `count`;
+			break;
+		default:
+			// For Wayfinder-selected gateways, use default behavior
 			break;
 	}
 

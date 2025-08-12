@@ -6,7 +6,9 @@ import { InjectedArweaveSigner } from 'warp-contracts-plugin-signature';
 import Arweave from 'arweave';
 import Stamps from '@permaweb/stampjs';
 
-import { API_CONFIG, GATEWAYS } from 'helpers/config';
+import { createArweaveInstance } from 'helpers/arweave';
+import { API_CONFIG } from 'helpers/config';
+import { getGraphQLEndpoint } from 'helpers/graphql';
 import { StampType } from 'helpers/types';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
@@ -24,28 +26,50 @@ export default function useStamps() {
 
 	React.useEffect(() => {
 		(async function () {
-			const arweave = Arweave.init({
-				host: GATEWAYS.arweave,
-				protocol: API_CONFIG.protocol,
-				port: API_CONFIG.port,
-				timeout: API_CONFIG.timeout,
-				logging: API_CONFIG.logging,
-			});
+			try {
+				const arweave = await createArweaveInstance();
+				const graphqlEndpoint = await getGraphQLEndpoint();
 
-			const warp = WarpFactory.forMainnet({
-				...defaultCacheOptions,
-				inMemory: true,
-			}).use(new DeployPlugin());
+				const warp = WarpFactory.forMainnet({
+					...defaultCacheOptions,
+					inMemory: true,
+				}).use(new DeployPlugin());
 
-			const stamps = Stamps.init({
-				warp: warp,
-				arweave: arweave,
-				wallet: arProvider.walletAddress ? new InjectedArweaveSigner(arProvider.walletAddress) : null,
-				graphql: `${API_CONFIG.protocol}://${GATEWAYS.arweave}/graphql`,
-			});
-			setStampLib(stamps);
+				const stamps = Stamps.init({
+					warp: warp,
+					arweave: arweave,
+					wallet: arProvider.walletAddress ? new InjectedArweaveSigner(arProvider.walletAddress) : null,
+					graphql: graphqlEndpoint,
+				});
+				setStampLib(stamps);
 
-			if (!arProvider.walletAddress) setStampDisabled(true);
+				if (!arProvider.walletAddress) setStampDisabled(true);
+			} catch (error) {
+				console.error('Failed to initialize stamps with Wayfinder:', error);
+				// Fallback to default configuration
+				const arweave = Arweave.init({
+					host: 'arweave.net',
+					protocol: 'https',
+					port: 443,
+					timeout: 60000,
+					logging: false,
+				});
+
+				const warp = WarpFactory.forMainnet({
+					...defaultCacheOptions,
+					inMemory: true,
+				}).use(new DeployPlugin());
+
+				const stamps = Stamps.init({
+					warp: warp,
+					arweave: arweave,
+					wallet: arProvider.walletAddress ? new InjectedArweaveSigner(arProvider.walletAddress) : null,
+					graphql: 'https://arweave.net/graphql',
+				});
+				setStampLib(stamps);
+
+				if (!arProvider.walletAddress) setStampDisabled(true);
+			}
 		})();
 	}, [arProvider.walletAddress]);
 

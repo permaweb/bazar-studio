@@ -5,7 +5,7 @@ import { checkFollowingTarget } from 'gql';
 
 import { Button } from 'components/atoms/Button';
 import { Notification } from 'components/atoms/Notification';
-import { GATEWAYS } from 'helpers/config';
+// GATEWAYS import removed - using Wayfinder instead
 import { formatAddress } from 'helpers/utils';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
@@ -31,7 +31,7 @@ export default function AddressFollow(props: IProps) {
 					const isFollowing = await checkFollowingTarget({
 						targetAddress: props.address,
 						requestAddress: arProvider.walletAddress,
-						gateway: GATEWAYS.arweave,
+						gateway: null, // Let getGQLData use Wayfinder if available
 					});
 					setIsFollowing(isFollowing);
 					setFollowDisabled(isFollowing);

@@ -13,7 +13,7 @@ import { Loader } from 'components/atoms/Loader';
 import { Notification } from 'components/atoms/Notification';
 import { Table } from 'components/molecules/Table';
 import { AOS_SNIPPETS } from 'helpers/aos-snippets';
-import { ASSETS, GATEWAYS, PAGINATORS, REDIRECTS, STORAGE, TAGS, URLS } from 'helpers/config';
+import { ASSETS, PAGINATORS, REDIRECTS, STORAGE, TAGS, URLS } from 'helpers/config';
 import { AlignType, CursorEnum, GQLNodeResponseType, GroupIndexType } from 'helpers/types';
 import { formatAddress, getTagValue } from 'helpers/utils';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
@@ -195,7 +195,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 				if (index !== null) {
 					try {
 						const assetsResponse = await getGQLData({
-							gateway: GATEWAYS.arweave,
+							gateway: null, // Let getGQLData use Wayfinder if available
 							ids: groupIndex[index].ids,
 							tagFilters: null,
 							owners: null,
@@ -222,7 +222,7 @@ export default function AssetsTable(props: { useIdAction: boolean; useActions: b
 			if (uploadReducer.data.idList && uploadReducer.data.idList.length) {
 				try {
 					const assetsResponse = await getGQLData({
-						gateway: GATEWAYS.arweave,
+						gateway: null, // Let getGQLData use Wayfinder if available
 						ids: uploadReducer.data.idList,
 						tagFilters: null,
 						owners: null,
