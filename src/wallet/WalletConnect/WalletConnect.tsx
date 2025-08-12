@@ -5,8 +5,8 @@ import { Avatar } from 'components/atoms/Avatar';
 import { Modal } from 'components/molecules/Modal';
 import { TurboBalanceFund } from 'components/molecules/TurboBalanceFund';
 import { ProfileManage } from 'components/organisms/ProfileManage';
-import { ASSETS, REDIRECTS } from 'helpers/config';
-import { formatAddress, formatARAmount } from 'helpers/utils';
+import { ASSETS, formatTokenBalance, REDIRECTS, TOKEN_REGISTRY } from 'helpers/config';
+import { formatAddress, formatARAmount, getTotalTokenBalance } from 'helpers/utils';
 import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
 import { CloseHandler } from 'wrappers/CloseHandler';
@@ -105,6 +105,32 @@ export default function WalletConnect(_props: { callback?: () => void }) {
 										<ReactSVG src={ASSETS.ar} />
 										<span>{formatARAmount(arProvider.arBalance ? arProvider.arBalance : 0)}</span>
 									</S.BalanceLine>
+									{arProvider.tokenBalances && Object.keys(arProvider.tokenBalances).length > 0 && (
+										<>
+											{Object.keys(arProvider.tokenBalances).map((tokenId: string) => {
+												const tokenInfo = TOKEN_REGISTRY[tokenId];
+												if (!tokenInfo) return null;
+
+												const balance = arProvider.tokenBalances[tokenId];
+												const formattedBalance = formatTokenBalance(balance || 0, tokenId);
+
+												return (
+													<S.BalanceLine key={tokenId}>
+														{tokenInfo.logo && (
+															<img
+																src={`https://arweave.net/${tokenInfo.logo}`}
+																alt={tokenInfo.symbol || ''}
+																style={{ height: '16.5px', width: '16.5px', margin: '2.5px 8.5px 0 0' }}
+															/>
+														)}
+														<span>
+															{formattedBalance} {tokenInfo.symbol}
+														</span>
+													</S.BalanceLine>
+												);
+											})}
+										</>
+									)}
 									{/* <div>
 										<S.BHeader>
 											<p>{language.turboBalance}</p>

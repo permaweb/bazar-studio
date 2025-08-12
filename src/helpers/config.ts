@@ -49,6 +49,7 @@ import wrappedAr from 'assets/wrapped-ar.svg';
 import x from 'assets/x.svg';
 
 import { UploadStepType, WalletEnum } from './types';
+import { formatCount } from './utils';
 
 export const APP = {
 	name: 'Bazar Studio',
@@ -369,4 +370,51 @@ export const RENDERERS = {
 		domain: 'audio-renderer',
 		contentType: CONTENT_TYPES.audio,
 	},
+};
+
+// Token Registry for proper denomination handling
+export const TOKEN_REGISTRY = {
+	[AO.defaultToken]: {
+		id: AO.defaultToken,
+		name: 'Wrapped AR',
+		symbol: 'wAR',
+		logo: 'L99jaxRKQKJt9CqoJtPaieGPEhJD3wNhR4iGqc8amXs', // Correct wAR logo
+		denomination: 12,
+		description: 'Wrapped Arweave token',
+		priority: 1, // Primary token
+	},
+	'7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4': {
+		id: '7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4',
+		name: 'Wander Token',
+		symbol: 'WNDR',
+		logo: 'xUO2tQglSYsW89aLYN8ErGivZqezoDaEn95JniaCBZk', // WANDER token logo on Arweave
+		denomination: 18,
+		description: 'Wander protocol token',
+		priority: 2,
+	},
+	[AO.pixl]: {
+		id: AO.pixl,
+		name: 'PIXL Token',
+		symbol: 'PIXL',
+		logo: 'czR2tJmSr7upPpReXu6IuOc2H7RuHRRAhI7DXAUlszU', // PIXL logo
+		denomination: 6,
+		description: 'PIXL protocol token',
+		priority: 3,
+	},
+};
+
+// Helper function to get available tokens
+export const getAvailableTokens = () => Object.values(TOKEN_REGISTRY).sort((a, b) => a.priority - b.priority);
+
+// Helper function to format token balance with proper denomination
+export const formatTokenBalance = (amount: number, tokenId: string): string => {
+	const tokenInfo = TOKEN_REGISTRY[tokenId];
+	if (!tokenInfo || !tokenInfo.denomination) {
+		return amount.toString();
+	}
+
+	const factor = Math.pow(10, tokenInfo.denomination);
+	const formattedAmount = (amount / factor).toFixed(tokenInfo.denomination);
+
+	return formatCount(formattedAmount);
 };

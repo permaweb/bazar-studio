@@ -14,7 +14,7 @@ import { Modal } from 'components/molecules/Modal';
 import { AO, API_CONFIG, AR_WALLETS, GATEWAYS, REDIRECTS, STORAGE, WALLET_PERMISSIONS } from 'helpers/config';
 import { getARBalanceEndpoint, getTurboBalanceEndpoint } from 'helpers/endpoints';
 import { ProfileHeaderType, WalletEnum } from 'helpers/types';
-import { getARAmountFromWinc } from 'helpers/utils';
+import { getARAmountFromWinc, getTotalTokenBalance } from 'helpers/utils';
 import Othent from 'helpers/wallet';
 import { useLanguageProvider } from 'providers/LanguageProvider';
 
@@ -110,6 +110,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	const [tokenBalances, setTokenBalances] = React.useState<{ [address: string]: number } | null>({
 		[AO.defaultToken]: null,
 		[AO.pixl]: null,
+		'7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4': null, // Wander token
 	});
 	const [toggleTokenBalanceUpdate, setToggleTokenBalanceUpdate] = React.useState<boolean>(false);
 
@@ -257,17 +258,32 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	}, [toggleProfileUpdate]);
 
 	React.useEffect(() => {
-		if (profile && profile.id) {
+		if (profile && profile.id && walletAddress) {
 			const fetchDefaultTokenBalance = async () => {
 				try {
-					const defaultTokenBalance = await readHandler({
+					// Fetch profile balance
+					const profileBalance = await readHandler({
 						processId: AO.defaultToken,
 						action: 'Balance',
 						tags: [{ name: 'Recipient', value: profile.id }],
 					});
+
+					// Fetch wallet balance
+					const walletBalance = await readHandler({
+						processId: AO.defaultToken,
+						action: 'Balance',
+						tags: [{ name: 'Recipient', value: walletAddress }],
+					});
+
+					// Combine balances using getTotalTokenBalance
+					const totalBalance = getTotalTokenBalance({
+						profileBalance: profileBalance || 0,
+						walletBalance: walletBalance || 0,
+					});
+
 					setTokenBalances((prevBalances) => ({
 						...prevBalances,
-						[AO.defaultToken]: defaultTokenBalance || 0,
+						[AO.defaultToken]: totalBalance || 0,
 					}));
 				} catch (e) {
 					console.error(e);
@@ -279,22 +295,38 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 			setTokenBalances({
 				[AO.defaultToken]: 0,
 				[AO.pixl]: 0,
+				'7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4': 0, // Wander token
 			});
 		}
-	}, [profile, toggleTokenBalanceUpdate]);
+	}, [profile, toggleTokenBalanceUpdate, walletAddress]);
 
 	React.useEffect(() => {
-		if (profile && profile.id) {
+		if (profile && profile.id && walletAddress) {
 			const fetchPixlTokenBalance = async () => {
 				try {
-					const pixlTokenBalance = await readHandler({
+					// Fetch profile balance
+					const profileBalance = await readHandler({
 						processId: AO.pixl,
 						action: 'Balance',
 						tags: [{ name: 'Recipient', value: profile.id }],
 					});
+
+					// Fetch wallet balance
+					const walletBalance = await readHandler({
+						processId: AO.pixl,
+						action: 'Balance',
+						tags: [{ name: 'Recipient', value: walletAddress }],
+					});
+
+					// Combine balances using getTotalTokenBalance
+					const totalBalance = getTotalTokenBalance({
+						profileBalance: profileBalance || 0,
+						walletBalance: walletBalance || 0,
+					});
+
 					setTokenBalances((prevBalances) => ({
 						...prevBalances,
-						[AO.pixl]: pixlTokenBalance || 0,
+						[AO.pixl]: totalBalance || 0,
 					}));
 				} catch (e) {
 					console.error(e);
@@ -303,7 +335,44 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 			fetchPixlTokenBalance();
 		}
-	}, [profile, toggleTokenBalanceUpdate]);
+	}, [profile, toggleTokenBalanceUpdate, walletAddress]);
+
+	React.useEffect(() => {
+		if (profile && profile.id && walletAddress) {
+			const fetchWanderTokenBalance = async () => {
+				try {
+					// Fetch profile balance
+					const profileBalance = await readHandler({
+						processId: '7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4',
+						action: 'Balance',
+						tags: [{ name: 'Recipient', value: profile.id }],
+					});
+
+					// Fetch wallet balance
+					const walletBalance = await readHandler({
+						processId: '7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4',
+						action: 'Balance',
+						tags: [{ name: 'Recipient', value: walletAddress }],
+					});
+
+					// Combine balances using getTotalTokenBalance
+					const totalBalance = getTotalTokenBalance({
+						profileBalance: profileBalance || 0,
+						walletBalance: walletBalance || 0,
+					});
+
+					setTokenBalances((prevBalances) => ({
+						...prevBalances,
+						'7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4': totalBalance || 0,
+					}));
+				} catch (e) {
+					console.error(e);
+				}
+			};
+
+			fetchWanderTokenBalance();
+		}
+	}, [profile, toggleTokenBalanceUpdate, walletAddress]);
 
 	async function getTurboBalance() {
 		if (wallet && walletType) {
