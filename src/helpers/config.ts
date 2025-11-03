@@ -67,6 +67,10 @@ export const AO = {
 	profileSrc: process.env.PROFILE_SRC,
 };
 
+export const HB = {
+	defaultNode: 'https://app-1.forward.computer',
+};
+
 export const ASSETS = {
 	actionMenu: actionMenu,
 	add: add,
