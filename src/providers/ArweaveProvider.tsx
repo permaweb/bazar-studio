@@ -8,14 +8,12 @@ import { ArconnectSigner } from 'arbundles';
 import { connect, createSigner } from '@permaweb/aoconnect';
 import PermawebLibs from '@permaweb/libs';
 
-import { readHandler } from 'api';
-
 import { Modal } from 'components/molecules/Modal';
 import {
-	AO,
 	API_CONFIG,
 	AR_WALLETS,
 	GATEWAYS,
+	HB,
 	REDIRECTS,
 	STORAGE,
 	TOKEN_REGISTRY,
@@ -116,7 +114,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 	const [arBalance, setArBalance] = React.useState<number | null>(null);
 	const [turboBalance, setTurboBalance] = React.useState<number | string | null>(null);
-	const [tokenBalances, setTokenBalances] = React.useState<{ [address: string]: number } | null>(() => {
+	const [tokenBalances, _setTokenBalances] = React.useState<{ [address: string]: number } | null>(() => {
 		// Initialize with all available tokens
 		const initialBalances: { [address: string]: number } = {};
 		Object.keys(TOKEN_REGISTRY).forEach((tokenId) => {
@@ -154,10 +152,11 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 	}, []);
 
 	React.useEffect(() => {
-		const deps = {
+		const deps: any = {
 			ao: connect({ MODE: 'legacy' }),
 			arweave: Arweave.init({}),
 			signer: wallet ? createSigner(wallet) : null,
+			node: { url: HB.defaultNode },
 		};
 
 		setLibs(PermawebLibs.init(deps));
@@ -201,7 +200,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 					setProfile(cachedProfile);
 				}
-				await new Promise((r) => setTimeout(r, 2000));
+
 				setProfile(await resolveProfile(walletAddress));
 			}
 		})();
@@ -269,42 +268,42 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 		})();
 	}, [toggleProfileUpdate]);
 
-	React.useEffect(() => {
-		if (profile && profile.id) {
-			const fetchAllTokenBalances = async () => {
-				try {
-					const newBalances = { ...tokenBalances };
+	// React.useEffect(() => {
+	// 	if (profile && profile.id) {
+	// 		const fetchAllTokenBalances = async () => {
+	// 			try {
+	// 				const newBalances = { ...tokenBalances };
 
-					// Fetch balances for all available tokens
-					for (const tokenId of Object.keys(TOKEN_REGISTRY)) {
-						try {
-							const balance = await readHandler({
-								processId: tokenId,
-								action: 'Balance',
-								tags: [{ name: 'Recipient', value: profile.id }],
-							});
-							newBalances[tokenId] = balance || 0;
-						} catch (e) {
-							console.error(`Error fetching balance for token ${tokenId}:`, e);
-							newBalances[tokenId] = 0;
-						}
-					}
+	// 				// Fetch balances for all available tokens
+	// 				for (const tokenId of Object.keys(TOKEN_REGISTRY)) {
+	// 					try {
+	// 						const balance = await readHandler({
+	// 							processId: tokenId,
+	// 							action: 'Balance',
+	// 							tags: [{ name: 'Recipient', value: profile.id }],
+	// 						});
+	// 						newBalances[tokenId] = balance || 0;
+	// 					} catch (e) {
+	// 						console.error(`Error fetching balance for token ${tokenId}:`, e);
+	// 						newBalances[tokenId] = 0;
+	// 					}
+	// 				}
 
-					setTokenBalances(newBalances);
-				} catch (e) {
-					console.error('Error fetching token balances:', e);
-				}
-			};
+	// 				setTokenBalances(newBalances);
+	// 			} catch (e) {
+	// 				console.error('Error fetching token balances:', e);
+	// 			}
+	// 		};
 
-			fetchAllTokenBalances();
-		} else {
-			const resetBalances: { [address: string]: number } = {};
-			Object.keys(TOKEN_REGISTRY).forEach((tokenId) => {
-				resetBalances[tokenId] = 0;
-			});
-			setTokenBalances(resetBalances);
-		}
-	}, [profile, toggleTokenBalanceUpdate]);
+	// 		fetchAllTokenBalances();
+	// 	} else {
+	// 		const resetBalances: { [address: string]: number } = {};
+	// 		Object.keys(TOKEN_REGISTRY).forEach((tokenId) => {
+	// 			resetBalances[tokenId] = 0;
+	// 		});
+	// 		setTokenBalances(resetBalances);
+	// 	}
+	// }, [profile, toggleTokenBalanceUpdate]);
 
 	// Removed separate PIXL token balance fetch since it's now handled in fetchAllTokenBalances
 
