@@ -36,7 +36,8 @@ export const InfoHeader = styled.div`
 	gap: 15px;
 	margin: 0 0 10px 0 !important;
 	span {
-		color: ${(props) => props.theme.colors.font.primary};
+		color: ${(props) => props.theme.colors.font.alt1};
+		font-family: ${(props) => props.theme.typography.family.alt1};
 		font-size: ${(props) => props.theme.typography.size.lg};
 		font-weight: ${(props) => props.theme.typography.weight.xBold};
 		line-height: 1.5;
@@ -81,6 +82,66 @@ export const InfoLineFlex = styled.div`
 export const TWrapper = styled.div`
 	display: flex;
 	flex-wrap: wrap;
+`;
+
+export const TraitsPreview = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+`;
+
+export const TraitPreviewItem = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	background: ${(props) => props.theme.colors.container.alt3.background};
+	border: 1px solid ${(props) => props.theme.colors.border.primary};
+	border-radius: ${STYLING.dimensions.radius.alt2};
+`;
+
+export const TraitPreviewType = styled.span`
+	font-size: 11px;
+	font-weight: ${(props) => props.theme.typography.weight.medium};
+	color: ${(props) => props.theme.colors.font.alt1};
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	min-width: 80px;
+`;
+
+export const TraitPreviewValue = styled.span`
+	font-size: ${(props) => props.theme.typography.size.small};
+	font-weight: ${(props) => props.theme.typography.weight.bold};
+	color: ${(props) => props.theme.colors.font.primary};
+`;
+
+export const AssetTraitsPreview = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+`;
+
+export const AssetTraitItem = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px;
+	background: ${(props) => props.theme.colors.container.alt3.background};
+	border: 1px solid ${(props) => props.theme.colors.border.primary};
+	border-radius: ${STYLING.dimensions.radius.alt2};
+`;
+
+export const AssetName = styled.span`
+	font-size: ${(props) => props.theme.typography.size.small};
+	font-weight: ${(props) => props.theme.typography.weight.bold};
+	color: ${(props) => props.theme.colors.font.primary};
+	margin-bottom: 4px;
+`;
+
+export const AssetTraitsList = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 `;
 
 export const MWrapper = styled.div`

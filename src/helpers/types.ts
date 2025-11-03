@@ -149,7 +149,7 @@ export enum WalletEnum {
 
 export type TagType = { name: string; value: string };
 
-export type ButtonType = 'primary' | 'alt1' | 'alt2';
+export type ButtonType = 'primary' | 'alt1' | 'alt2' | 'danger';
 export type RefType = { current: HTMLElement };
 export type DateType = 'iso' | 'epoch';
 export type NavPathType = { path: string; basePath?: string; label: string; icon: string };
@@ -179,7 +179,16 @@ export type ReduxActionType = {
 	payload: any;
 };
 
-export type FileMetadataType = { file: any; title: string; description: string };
+export type FileMetadataType = {
+	file: any;
+	title: string;
+	description: string;
+	coverArt?: string;
+	traits?: Array<{
+		trait_type: string;
+		value: string;
+	}>;
+};
 
 export type UploadType = 'collection' | 'assets';
 
@@ -203,7 +212,8 @@ export type UploadPayloadType =
 	| 'banner'
 	| 'thumbnail'
 	| 'hasLicense'
-	| 'activeLicense';
+	| 'activeLicense'
+	| 'metadataTraits';
 
 export type UploadPayloadDataType = { field: UploadPayloadType; data: any };
 
@@ -226,6 +236,10 @@ export type UploadReduxType = {
 		type: string;
 		hasLicense: boolean;
 		activeLicense: string;
+		metadataTraits: Array<{
+			trait_type: string;
+			value: string;
+		}>;
 	};
 	currentStep: UploadStepType;
 	nextStepDisabled: boolean;
@@ -263,7 +277,7 @@ export type TableHeaderType = {
 	[key: string]: { width: string; align: AlignType; display: string | null };
 };
 
-export type ActiveFieldAddType = 'title' | 'description';
+export type ActiveFieldAddType = 'title' | 'description' | 'coverArt' | 'traits';
 
 export type GroupIndexType = { index: string; ids: string[] }[];
 

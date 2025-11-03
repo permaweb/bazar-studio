@@ -13,6 +13,7 @@ import {
 	REDIRECTS,
 	TAGS,
 } from 'helpers/config';
+import { analyzeMusicNFTs, generateTrackId } from 'helpers/musicNFT';
 import { TagType, UploadType } from 'helpers/types';
 import { fileToBuffer, formatAddress, stripFileExtension } from 'helpers/utils';
 import { hideDocumentBody, showDocumentBody } from 'helpers/window';
@@ -101,6 +102,8 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								thumbnail: uploadReducer.data.thumbnail,
 								banner: uploadReducer.data.banner,
+								skipRegistry: false,
+								skipActivity: false,
 							},
 							(status: string) => setResponse(status)
 						);
@@ -124,6 +127,16 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 								updateType: 'Add',
 							});
+
+							setResponse('Adding collection to profile...');
+
+							const updatedCollections = [...(arProvider.profile.collections ?? []), collectionId];
+							const profileUpdateResponse = await permawebProvider.libs.updateZone(
+								{ Collections: updatedCollections },
+								arProvider.profile.id,
+								arProvider.wallet
+							);
+							console.log(`Profile update: ${profileUpdateResponse}`);
 
 							if (updateAssetsResponse) {
 								setResponse(`${language.collectionCreated}!`);
@@ -212,7 +225,7 @@ export default function Upload() {
 					const asset: any = {
 						name: assetName,
 						description: assetDescription,
-						topics: [...uploadReducer.data.topics, 'permabrawl'],
+						topics: uploadReducer.data.topics,
 						creator: arProvider.profile.id,
 						data: buffer,
 						contentType: contentType,
@@ -221,7 +234,44 @@ export default function Upload() {
 						transferable: uploadReducer.data.transferableTokens,
 					};
 
-					if (collectionId) asset.metadata = { collectionId };
+					// Add metadata
+					asset.metadata = {};
+					if (collectionId) asset.metadata.collectionId = collectionId;
+
+					// Add metadata traits if they exist (per-asset traits only)
+					if (element.traits && element.traits.length > 0) {
+						asset.metadata.OriginalMetadata = JSON.stringify({
+							image: `${assetName}.png`,
+							name: assetName,
+							attributes: element.traits,
+							description: assetDescription,
+						});
+					}
+
+					// Add cover art for audio files
+					if (element.coverArt && contentType.startsWith('audio/')) {
+						try {
+							// Upload cover art as a separate transaction
+							const coverArtTxId = await permawebProvider.libs.resolveTransaction(element.coverArt);
+							asset.metadata.coverArt = coverArtTxId;
+
+							// Generate music NFT unique identifiers
+							const timestamp = Date.now();
+							const trackId = generateTrackId(arProvider.walletAddress, element.file.name, timestamp);
+							asset.metadata.trackId = trackId;
+
+							// Add album ID if this is part of a collection
+							if (collectionId && uploadReducer.data.title) {
+								const albumId = `ALBUM_${arProvider.walletAddress}_${uploadReducer.data.title
+									.replace(/[^a-zA-Z0-9]/g, '')
+									.substring(0, 8)}`;
+								asset.metadata.albumId = albumId;
+							}
+						} catch (e: any) {
+							console.error('Failed to upload cover art:', e);
+							// Continue without cover art if upload fails
+						}
+					}
 
 					if (uploadReducer.data.hasLicense && uploadReducer.data.license)
 						asset.tags = buildLicenseTags(uploadReducer.data.license);
@@ -245,6 +295,8 @@ export default function Upload() {
 
 	function handleClear() {
 		setResponse(null);
+		setUploadLog('');
+		setErrorLog('');
 		dispatch(uploadActions.clearUpload());
 	}
 

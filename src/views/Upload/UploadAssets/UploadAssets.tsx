@@ -9,7 +9,15 @@ import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { Table } from 'components/molecules/Table';
 import { TurboBalanceFund } from 'components/molecules/TurboBalanceFund';
-import { ALLOWED_ASSET_TYPES, ASSETS, MAX_UPLOAD_SIZE } from 'helpers/config';
+import { BulkTraitEditor } from 'components/organisms/BulkTraitEditor';
+import { MetadataTraits } from 'components/organisms/MetadataTraits';
+import {
+	ALLOWED_ASSET_TYPES,
+	ALLOWED_THUMBNAIL_TYPES,
+	ASSETS,
+	MAX_THUMBNAIL_IMAGE_SIZE,
+	MAX_UPLOAD_SIZE,
+} from 'helpers/config';
 import { getTurboCostWincEndpoint } from 'helpers/endpoints';
 import { ActiveFieldAddType, AlignType, FileMetadataType, SequenceType } from 'helpers/types';
 import { getARAmountFromWinc, getByteSizeDisplay, stripFileExtension } from 'helpers/utils';
@@ -28,6 +36,7 @@ function FileDropdown(props: {
 	data: FileMetadataType;
 	handleRemoveFile: (fileName: string) => void;
 	handleAddField: (fileName: string, value: string, fieldType: ActiveFieldAddType) => void;
+	allAssets: FileMetadataType[];
 }) {
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
@@ -37,11 +46,74 @@ function FileDropdown(props: {
 
 	const [title, setTitle] = React.useState<string>('');
 	const [description, setDescription] = React.useState<string>('');
+	const [coverArt, setCoverArt] = React.useState<string>('');
+
+	const fileInputRef = React.useRef<any>(null);
+
+	function handleRemoveCoverArt() {
+		props.handleAddField(props.data.file.name, '', 'coverArt');
+		setCoverArt(''); // Reset local state
+		if (fileInputRef.current) {
+			fileInputRef.current.value = ''; // Clear file input
+		}
+		setActiveFieldAdd(null); // Close modal if open
+		setOpen(false);
+	}
+
+	function getExistingTraits() {
+		// Get all traits from other assets in the upload to suggest templates
+		const allTraits = props.allAssets
+			.filter((asset: any) => asset.traits && asset.traits.length > 0)
+			.flatMap((asset: any) => asset.traits);
+
+		// Group by trait_type and get unique values
+		const traitTemplates = allTraits.reduce((acc: any, trait: any) => {
+			if (!acc[trait.trait_type]) {
+				acc[trait.trait_type] = new Set();
+			}
+			acc[trait.trait_type].add(trait.value);
+			return acc;
+		}, {});
+
+		// Convert to array format
+		return Object.entries(traitTemplates).map(([trait_type, values]) => ({
+			trait_type,
+			values: Array.from(values as Set<string>),
+		}));
+	}
 
 	React.useEffect(() => {
-		setTitle('');
-		setDescription('');
-	}, [props.id]);
+		setTitle(props.data.title || '');
+		setDescription(props.data.description || '');
+		setCoverArt(props.data.coverArt || '');
+		// Reset file input when component re-renders
+		if (fileInputRef.current) {
+			fileInputRef.current.value = '';
+		}
+	}, [props.id, props.data.title, props.data.description, props.data.coverArt]);
+
+	function handleCoverArtChange(e: React.ChangeEvent<HTMLInputElement>) {
+		if (e.target.files && e.target.files.length) {
+			const file = e.target.files[0];
+			if (file.type.startsWith('image/')) {
+				// Check file size (limit to 100KB like thumbnails)
+				if (file.size > MAX_THUMBNAIL_IMAGE_SIZE) {
+					alert(`Cover art file size must be under ${getByteSizeDisplay(MAX_THUMBNAIL_IMAGE_SIZE)}`);
+					return;
+				}
+
+				const reader = new FileReader();
+				reader.onload = (event: ProgressEvent<FileReader>) => {
+					if (event.target?.result) {
+						setCoverArt(event.target.result as string);
+					}
+				};
+				reader.readAsDataURL(file);
+			} else {
+				alert('Please select an image file for cover art');
+			}
+		}
+	}
 
 	function getFieldAdd() {
 		let header: string;
@@ -105,6 +177,95 @@ function FileDropdown(props: {
 					/>
 				);
 				break;
+			case 'coverArt':
+				header = language.editCoverArt;
+				body = (
+					<S.CoverArtWrapper>
+						<S.CoverArtUpload>
+							<input
+								ref={fileInputRef}
+								type={'file'}
+								onChange={handleCoverArtChange}
+								accept={ALLOWED_THUMBNAIL_TYPES}
+								style={{ display: 'none' }}
+							/>
+							{coverArt ? (
+								<S.CoverArtPreview>
+									<img src={coverArt} alt="Cover art preview" />
+									<S.CoverArtActions>
+										<IconButton
+											type={'primary'}
+											src={ASSETS.close}
+											handlePress={() => setCoverArt('')}
+											dimensions={{ wrapper: 21.5, icon: 8.5 }}
+										/>
+									</S.CoverArtActions>
+								</S.CoverArtPreview>
+							) : (
+								<S.CoverArtPlaceholder onClick={() => fileInputRef.current?.click()}>
+									<ReactSVG src={ASSETS.image} />
+									<span>{language.uploadCoverArt}</span>
+								</S.CoverArtPlaceholder>
+							)}
+						</S.CoverArtUpload>
+						<S.CoverArtInfo>
+							<span>{language.coverArtInfo}</span>
+						</S.CoverArtInfo>
+						<S.CoverArtFileSize>
+							<span>📁 File size limit: {getByteSizeDisplay(MAX_THUMBNAIL_IMAGE_SIZE)}</span>
+						</S.CoverArtFileSize>
+					</S.CoverArtWrapper>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							if (coverArt) {
+								props.handleAddField(props.data.file.name, coverArt, 'coverArt');
+							}
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={!coverArt}
+						noMinWidth
+					/>
+				);
+				break;
+			case 'traits':
+				header = 'Edit Metadata Traits';
+				body = (
+					<MetadataTraits
+						traits={props.data.traits || []}
+						onAddTrait={(trait) => {
+							const updatedTraits = [...(props.data.traits || []), trait];
+							props.handleAddField(props.data.file.name, JSON.stringify(updatedTraits), 'traits');
+						}}
+						onRemoveTrait={(index) => {
+							const updatedTraits = (props.data.traits || []).filter((_, i) => i !== index);
+							props.handleAddField(props.data.file.name, JSON.stringify(updatedTraits), 'traits');
+						}}
+						assetCount={1}
+						showTemplates={true}
+						existingTraits={getExistingTraits()}
+						onApplyTemplate={(templateTraits) => {
+							props.handleAddField(props.data.file.name, JSON.stringify(templateTraits), 'traits');
+						}}
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
 		}
 
 		return (
@@ -148,6 +309,31 @@ function FileDropdown(props: {
 							>
 								{language.editDescription}
 							</S.LI>
+							<S.LI
+								onClick={() => {
+									setActiveFieldAdd('traits');
+								}}
+								disabled={false}
+							>
+								{props.data.traits && props.data.traits.length > 0 ? 'Edit Traits' : 'Add Traits'}
+							</S.LI>
+							{props.data.file.type.startsWith('audio/') && (
+								<>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('coverArt');
+										}}
+										disabled={false}
+									>
+										{props.data.coverArt ? language.editCoverArt : language.uploadCoverArt}
+									</S.LI>
+									{props.data.coverArt && (
+										<S.LI onClick={handleRemoveCoverArt} disabled={false}>
+											{language.removeCoverArt}
+										</S.LI>
+									)}
+								</>
+							)}
 							<S.LI
 								onClick={() => {
 									props.handleRemoveFile(props.data.file.name);
@@ -261,6 +447,8 @@ export default function UploadAssets() {
 					...data,
 					...(fieldType === 'title' ? { title: value } : {}),
 					...(fieldType === 'description' ? { description: value } : {}),
+					...(fieldType === 'coverArt' ? { coverArt: value || undefined } : {}),
+					...(fieldType === 'traits' ? { traits: JSON.parse(value) } : {}),
 				};
 			}
 			return data;
@@ -274,6 +462,20 @@ export default function UploadAssets() {
 				},
 			])
 		);
+	}
+
+	function handleBulkApplyTraits(assetNames: string[], trait: { trait_type: string; value: string }) {
+		const updatedData = uploadReducer.data.contentList.map((data: FileMetadataType) => {
+			if (assetNames.includes(data.file.name)) {
+				const existingTraits = data.traits || [];
+				return {
+					...data,
+					traits: [...existingTraits, trait],
+				};
+			}
+			return data;
+		});
+		dispatch(uploadActions.setUpload([{ field: 'contentList', data: updatedData }]));
 	}
 
 	function handleRemoveFile(fileName: string) {
@@ -291,7 +493,7 @@ export default function UploadAssets() {
 	function getTableHeader() {
 		return {
 			fileName: {
-				width: '70%',
+				width: '60%',
 				align: 'left' as AlignType,
 				display: language.title,
 			},
@@ -299,6 +501,11 @@ export default function UploadAssets() {
 				width: '15%',
 				align: 'center' as AlignType,
 				display: language.description,
+			},
+			coverArt: {
+				width: '10%',
+				align: 'center' as AlignType,
+				display: language.coverArt,
 			},
 			actions: {
 				width: '15%',
@@ -327,6 +534,15 @@ export default function UploadAssets() {
 								<p>{`[ ${data.description ? '✓' : 'x'} ]`}</p>
 							</S.DDataWrapper>
 						),
+						coverArt: data.file.type.startsWith('audio/') ? (
+							<S.DDataWrapper>
+								<p>{`[ ${data.coverArt ? '✓' : 'x'} ]`}</p>
+							</S.DDataWrapper>
+						) : (
+							<S.DDataWrapper>
+								<p>-</p>
+							</S.DDataWrapper>
+						),
 						actions: (
 							<FileDropdown
 								id={`file-dropdown-${index}`}
@@ -335,6 +551,7 @@ export default function UploadAssets() {
 								handleAddField={(fileName: string, value: string, fieldType: ActiveFieldAddType) =>
 									handleAddField(fileName, value, fieldType)
 								}
+								allAssets={uploadReducer.data.contentList}
 							/>
 						),
 					},
@@ -419,6 +636,11 @@ export default function UploadAssets() {
 						noMinWidth
 					/>
 				</S.Header>
+
+				{/* Bulk Trait Editor for Large Collections */}
+				{uploadReducer.data.contentList && uploadReducer.data.contentList.length > 5 && (
+					<BulkTraitEditor assets={uploadReducer.data.contentList} onApplyToAssets={handleBulkApplyTraits} />
+				)}
 				<S.Body>{getFileWrapper()}</S.Body>
 				<input
 					ref={fileInputRef}

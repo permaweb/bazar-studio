@@ -10,9 +10,12 @@ import { FormField } from 'components/atoms/FormField';
 import { TextArea } from 'components/atoms/TextArea';
 import { Modal } from 'components/molecules/Modal';
 import { CollectionsTable } from 'components/organisms/CollectionsTable';
+import { MetadataTraits } from 'components/organisms/MetadataTraits';
 import { ASSETS, DEFAULT_ASSET_TOPICS, GATEWAYS, RENDERERS } from 'helpers/config';
+import { analyzeMusicNFTs, getMusicNFTSuggestions } from 'helpers/musicNFT';
 import { RendererType, ValidationType } from 'helpers/types';
 import { formatRequiredField } from 'helpers/utils';
+import { useArweaveProvider } from 'providers/ArweaveProvider';
 import { useLanguageProvider } from 'providers/LanguageProvider';
 import { RootState } from 'store';
 import * as uploadActions from 'store/upload/actions';
@@ -28,6 +31,8 @@ export default function UploadStepsDetails() {
 
 	const languageProvider = useLanguageProvider();
 	const language = languageProvider.object[languageProvider.current];
+
+	const arProvider = useArweaveProvider();
 
 	const [topicOptions, setTopicOptions] = React.useState<string[]>([
 		...new Set([...DEFAULT_ASSET_TOPICS, ...uploadReducer.data.topics]),
@@ -86,6 +91,53 @@ export default function UploadStepsDetails() {
 
 		return () => clearTimeout(timeoutId);
 	}, [uploadReducer.data.title]);
+
+	// Auto-detect music NFTs and suggest topics
+	React.useEffect(() => {
+		if (uploadReducer.data.contentList && uploadReducer.data.contentList.length > 0 && arProvider.walletAddress) {
+			const musicNFTs = analyzeMusicNFTs(
+				uploadReducer.data.contentList,
+				arProvider.walletAddress,
+				uploadReducer.data.title
+			);
+
+			if (musicNFTs.length > 0) {
+				// Auto-select music NFT topics if not already selected
+				const currentTopics = uploadReducer.data.topics;
+				const musicTopics = ['Music', 'Bazar Music', 'Cover Art'];
+
+				// Only add ALBUM if this is a collection upload or if a collection is selected
+				if (uploadReducer.uploadType === 'collection' || uploadReducer.data.collectionId) {
+					musicTopics.push('ALBUM');
+				}
+
+				const missingTopics = musicTopics.filter((topic) => !currentTopics.includes(topic));
+
+				if (missingTopics.length > 0) {
+					const newTopics = [...currentTopics, ...missingTopics];
+					dispatch(
+						uploadActions.setUpload([
+							{
+								field: 'topics',
+								data: newTopics,
+							},
+						])
+					);
+				}
+
+				// Update topic options to include music genre suggestions
+				const genreSuggestions = getMusicNFTSuggestions();
+				const allTopics = [...new Set([...DEFAULT_ASSET_TOPICS, ...genreSuggestions, ...currentTopics])];
+				setTopicOptions(allTopics);
+			}
+		}
+	}, [
+		uploadReducer.data.contentList,
+		arProvider.walletAddress,
+		uploadReducer.data.title,
+		uploadReducer.uploadType,
+		uploadReducer.data.collectionId,
+	]);
 
 	async function handleTitleCheck() {
 		if (uploadReducer.data.title) {
@@ -180,6 +232,8 @@ export default function UploadStepsDetails() {
 		}
 	}
 
+	// Removed global trait handlers - only per-asset traits are supported
+
 	function getInvalidDescription() {
 		if (uploadReducer.data.description && uploadReducer.data.description.length > MAX_DESCRIPTION_LENGTH) {
 			return {
@@ -199,6 +253,62 @@ export default function UploadStepsDetails() {
 			};
 		}
 		return { status: false, message: null };
+	}
+
+	function isRendererCompatibleWithFiles(rendererOption: any) {
+		if (!uploadReducer.data.contentList || uploadReducer.data.contentList.length === 0) {
+			return true;
+		}
+
+		for (const file of uploadReducer.data.contentList) {
+			const fileType = file.file.type;
+
+			if (rendererOption.label === '3D' && !fileType.includes('gltf-binary') && !file.file.name.endsWith('.glb')) {
+				return false;
+			}
+
+			if (
+				rendererOption.label === 'Audio' &&
+				!fileType.includes('audio') &&
+				!file.file.name.match(/\.(mp3|wav|ogg|m4a)$/i)
+			) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	function getIncompatibilityReason(rendererOption: any) {
+		if (!uploadReducer.data.contentList || uploadReducer.data.contentList.length === 0) {
+			return null;
+		}
+
+		const incompatibleFiles = [];
+
+		for (const file of uploadReducer.data.contentList) {
+			const fileType = file.file.type;
+			const fileName = file.file.name;
+
+			if (rendererOption.label === '3D' && !fileType.includes('gltf-binary') && !fileName.endsWith('.glb')) {
+				incompatibleFiles.push(fileName);
+			}
+
+			if (rendererOption.label === 'Audio' && !fileType.includes('audio') && !fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+				incompatibleFiles.push(fileName);
+			}
+		}
+
+		if (incompatibleFiles.length > 0) {
+			const fileNames =
+				incompatibleFiles.length > 2
+					? `${incompatibleFiles.slice(0, 2).join(', ')} and ${incompatibleFiles.length - 2} more`
+					: incompatibleFiles.join(', ');
+
+			return `Incompatible with: ${fileNames}`;
+		}
+
+		return null;
 	}
 
 	return (
@@ -287,7 +397,34 @@ export default function UploadStepsDetails() {
 								);
 							})}
 						</S.TBody>
+						{/* Music NFT Detection Indicator */}
+						{uploadReducer.data.contentList &&
+							uploadReducer.data.contentList.length > 0 &&
+							arProvider.walletAddress &&
+							(() => {
+								const musicNFTs = analyzeMusicNFTs(
+									uploadReducer.data.contentList,
+									arProvider.walletAddress,
+									uploadReducer.data.title
+								);
+
+								if (musicNFTs.length > 0) {
+									const musicTopics = ['Music', 'Bazar Music', 'Cover Art'];
+									if (uploadReducer.uploadType === 'collection' || uploadReducer.data.collectionId) {
+										musicTopics.push('ALBUM');
+									}
+
+									return (
+										<S.MusicNFTInfo>
+											<span>Music NFT detected! Auto-selected: {musicTopics.join(', ')}</span>
+											<span>Tip: Consider adding a genre tag (e.g., hip-hop/rap, electronic, rock)</span>
+										</S.MusicNFTInfo>
+									);
+								}
+								return null;
+							})()}
 					</S.TWrapper>
+					{/* Removed global traits - only per-asset traits are supported */}
 					<S.RWrapper>
 						<S.RHeader>
 							<span>{language.renderer}</span>
@@ -297,15 +434,20 @@ export default function UploadStepsDetails() {
 						</S.RInfo>
 						<S.ROptionsWrapper>
 							{Object.keys(rendererOptions).map((id: string, index: number) => {
+								const isCompatible = isRendererCompatibleWithFiles(rendererOptions[id]);
+								const compatibilityReason = !isCompatible ? getIncompatibilityReason(rendererOptions[id]) : null;
+
 								return (
 									<S.ROption
 										key={index}
 										active={renderer?.label === rendererOptions[id].label}
-										disabled={false}
-										onClick={() => handleRendererChange(rendererOptions[id])}
+										disabled={!isCompatible}
+										onClick={() => isCompatible && handleRendererChange(rendererOptions[id])}
+										title={compatibilityReason || ''}
 									>
 										<span>{rendererOptions[id].label}</span>
 										<p>{rendererOptions[id].description}</p>
+										{!isCompatible && <S.RIncompatible>{compatibilityReason}</S.RIncompatible>}
 									</S.ROption>
 								);
 							})}

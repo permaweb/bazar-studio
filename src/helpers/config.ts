@@ -273,6 +273,7 @@ export const WALLET_PERMISSIONS = ['ACCESS_ADDRESS', 'ACCESS_PUBLIC_KEY', 'SIGN_
 
 export const STORAGE = {
 	none: 'N/A',
+	profileByWallet: (id: string) => `profile-by-wallet-${id}`,
 };
 
 export const AR_PROFILE = {
@@ -310,7 +311,7 @@ export const MAX_UPLOAD_SIZE = 10000000;
 export const UPLOAD_STEPS: UploadStepType[] = ['details', 'license', 'checks'];
 
 export const DEFAULT_ASSET_TOPICS = [
-	'music',
+	'Music',
 	'politics',
 	'gaming',
 	'crypto',
@@ -321,6 +322,9 @@ export const DEFAULT_ASSET_TOPICS = [
 	'education',
 	'history',
 	'comedy',
+	'Bazar Music',
+	'Cover Art',
+	'ALBUM',
 ];
 
 export const ALLOWED_THUMBNAIL_TYPES = 'image/png, image/jpeg, image/gif';
@@ -338,6 +342,7 @@ export const CURRENCIES = {
 
 export const REDIRECTS = {
 	bazar: {
+		base: `https://bazar.arweave.net`,
 		asset: (id: string) => `https://bazar.arweave.net/#/asset/${id}`,
 		collection: (id: string) => `https://bazar.arweave.net/#/collection/${id}`,
 		profile: (id: string) => `https://bazar.arweave.net/#/profile/${id}`,
@@ -368,3 +373,52 @@ export const RENDERERS = {
 		contentType: CONTENT_TYPES.audio,
 	},
 };
+
+// Token Registry - Easy to add new tokens
+export const TOKEN_REGISTRY = {
+	[AO.defaultToken]: {
+		id: AO.defaultToken,
+		name: 'Wrapped AR',
+		symbol: 'wAR',
+		logo: 'L99jaxRKQKJt9CqoJtPaieGPEhJD3wNhR4iGqc8amXs', // Correct wAR logo
+		denomination: 12,
+		description: 'Wrapped Arweave token',
+		priority: 1, // Primary token
+	},
+	'7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4': {
+		id: '7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4',
+		name: 'Wander Token',
+		symbol: 'WNDR',
+		logo: 'xUO2tQglSYsW89aLYN8ErGivZqezoDaEn95JniaCBZk', // WANDER token logo on Arweave
+		denomination: 18,
+		description: 'Wander protocol token',
+		priority: 2,
+	},
+	[AO.pixl]: {
+		id: AO.pixl,
+		name: 'PIXL Token',
+		symbol: 'PIXL',
+		logo: 'czR2tJmSr7upPpReXu6IuOc2H7RuHRRAhI7DXAUlszU', // PIXL logo
+		denomination: 6,
+		description: 'PIXL protocol token',
+		priority: 3,
+	},
+	// AO token removed due to incorrect process ID
+};
+
+// Helper function to get available tokens
+export const getAvailableTokens = () => {
+	return Object.values(TOKEN_REGISTRY).sort((a, b) => a.priority - b.priority);
+};
+
+// Helper function to get token by ID
+export const getTokenById = (tokenId: string) => {
+	return TOKEN_REGISTRY[tokenId] || null;
+};
+
+// Helper function to get default token
+export const getDefaultToken = () => {
+	return TOKEN_REGISTRY[AO.defaultToken];
+};
+
+// NOTE: All tokens in this registry will have their balances fetched for both profile and wallet, and the UI will display the combined total (profileBalance + walletBalance) for each token. This applies to wAR, PIXL, Wander, AO, and any future tokens.

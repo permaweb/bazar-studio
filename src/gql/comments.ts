@@ -1,4 +1,4 @@
-import { getAssetById, getGQLData, getProfiles } from 'gql';
+import { getGQLData, getProfiles } from 'gql';
 
 import { CONTENT_TYPES, GATEWAYS, STORAGE, TAGS } from 'helpers/config';
 import {
@@ -11,30 +11,30 @@ import {
 } from 'helpers/types';
 import { getTagValue } from 'helpers/utils';
 
-export async function getCommentById(args: { id: string; dataSource: string }): Promise<CommentType | null> {
-	try {
-		const asset = await getAssetById({ id: args.id, gateway: GATEWAYS.arweave });
-		if (asset) {
-			return {
-				id: asset.id,
-				data: asset.description,
-				dataSource: args.dataSource,
-				dateCreated: asset.dateCreated,
-				creator: {
-					txId: null,
-					channelTitle: null,
-					handle: null,
-					avatar: null,
-					walletAddress: asset.creator.walletAddress,
-					profileIndex: null,
-					banner: null,
-				},
-			};
-		}
-	} catch (e: any) {
-		return null;
-	}
-}
+// export async function getCommentById(args: { id: string; dataSource: string }): Promise<CommentType | null> {
+// 	try {
+// 		const asset = await getAssetById({ id: args.id, gateway: GATEWAYS.arweave });
+// 		if (asset) {
+// 			return {
+// 				id: asset.id,
+// 				data: asset.description,
+// 				dataSource: args.dataSource,
+// 				dateCreated: asset.dateCreated,
+// 				creator: {
+// 					txId: null,
+// 					channelTitle: null,
+// 					handle: null,
+// 					avatar: null,
+// 					walletAddress: asset.creator.walletAddress,
+// 					profileIndex: null,
+// 					banner: null,
+// 				},
+// 			};
+// 		}
+// 	} catch (e: any) {
+// 		return null;
+// 	}
+// }
 
 export async function getCommentsByAddress(args: {
 	id: string;

@@ -14,7 +14,7 @@ const productionAddresses = {
 	PIXL: 'DM3FoZUq_yebASPhgd8pEIRIzDW6muXEhxz5-JwbZwo',
 	PROFILE_REGISTRY: 'SNy4m-DrqxWl01YqGM4sxI8qCni-58re8uuJLvZPypY',
 	PROFILE_SRC: '_R2XYWDPUXVvQrQKFaQRvDTDcDwnQNbqlTd_qvCRSpQ',
-	COLLECTIONS_REGISTRY: 'zwKi27GuKS3GOlwL3EhNGH02SJDDAO5Uy43ZJwomhZ4',
+	COLLECTIONS_REGISTRY: 'Kv6jQCcs8GwNpioj6tkTt06zD130YgqIHX7QNnZQYQc',
 	COLLECTION_SRC: '2ZDuM2VUCN8WHoAKOOjiH4_7Apq0ZHKnTWdLppxCdGY',
 	ASSET_SRC: 'S_pkWJ68HXZESWC1ldr28QDTZgc7sQlwQvzGmgSQoH4',
 };
@@ -114,28 +114,29 @@ module.exports = {
 				test: /\.(png|jpg|gif|riv)$/,
 				use: [
 					'url-loader',
-					{
-						loader: 'image-webpack-loader',
-						options: {
-							mozjpeg: {
-								progressive: true,
-								quality: 65,
-							},
-							optipng: {
-								enabled: false,
-							},
-							pngquant: {
-								quality: [0.65, 0.9],
-								speed: 4,
-							},
-							gifsicle: {
-								interlaced: false,
-							},
-							webp: {
-								quality: 75,
-							},
-						},
-					},
+					// Temporarily disabled image-webpack-loader to fix build errors
+					// {
+					// 	loader: 'image-webpack-loader',
+					// 	options: {
+					// 		mozjpeg: {
+					// 			progressive: true,
+					// 			quality: 65,
+					// 		},
+					// 		optipng: {
+					// 			enabled: false,
+					// 		},
+					// 		pngquant: {
+					// 			quality: [0.65, 0.9],
+					// 			speed: 4,
+					// 		},
+					// 		gifsicle: {
+					// 			interlaced: false,
+					// 		},
+					// 		webp: {
+					// 			quality: 75,
+					// 		},
+					// 	},
+					// },
 				],
 			},
 			{

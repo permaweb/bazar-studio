@@ -4,13 +4,12 @@ import { ReactSVG } from 'react-svg';
 import { connect, createDataItemSigner } from '@permaweb/aoconnect';
 
 import { createTransaction, messageResult } from 'api';
-import { getGQLData } from 'gql';
 
 import { Button } from 'components/atoms/Button';
 import { FormField } from 'components/atoms/FormField';
 import { Notification } from 'components/atoms/Notification';
 import { TextArea } from 'components/atoms/TextArea';
-import { AO, ASSETS, GATEWAYS, TAGS } from 'helpers/config';
+import { AO, ASSETS, TAGS } from 'helpers/config';
 import { getTxEndpoint } from 'helpers/endpoints';
 import { NotificationType } from 'helpers/types';
 import { checkValidAddress, getBase64Data, getDataURLContentType } from 'helpers/utils';
@@ -162,33 +161,7 @@ export default function ProfileManage(props: IProps) {
 
 							console.log(`Process Id -`, processId);
 
-							console.log('Fetching profile process...');
-							let fetchedAssetId: string;
-							let retryCount: number = 0;
-							while (!fetchedAssetId) {
-								await new Promise((r) => setTimeout(r, 2000));
-								const gqlResponse = await getGQLData({
-									gateway: GATEWAYS.goldsky,
-									ids: [processId],
-									tagFilters: null,
-									owners: null,
-									cursor: null,
-									reduxCursor: null,
-									cursorObjectKey: null,
-								});
-
-								if (gqlResponse && gqlResponse.data.length) {
-									console.log(`Fetched transaction -`, gqlResponse.data[0].node.id);
-									fetchedAssetId = gqlResponse.data[0].node.id;
-								} else {
-									console.log(`Transaction not found -`, processId);
-									retryCount++;
-									if (retryCount >= 10) {
-										throw new Error(`Profile not found, please try again`);
-									}
-								}
-							}
-							if (fetchedAssetId) {
+							if (processId) {
 								console.log('Sending source eval...');
 								const evalMessage = await aos.message({
 									process: processId,

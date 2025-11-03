@@ -6,6 +6,7 @@ import { getLicenseValuePayment } from 'gql';
 import { AssetInfoLicense } from 'components/molecules/AssetInfoLicense';
 import { Modal } from 'components/molecules/Modal';
 import { TurboBalanceFund } from 'components/molecules/TurboBalanceFund';
+import { MetadataTraits } from 'components/organisms/MetadataTraits';
 import { ASSETS, TAGS } from 'helpers/config';
 import { formatAddress } from 'helpers/utils';
 import { useLanguageProvider } from 'providers/LanguageProvider';
@@ -37,7 +38,7 @@ export default function UploadStepsChecks() {
 		<>
 			<S.Wrapper>
 				<S.InfoHeader>
-					<span>{language.details}</span>
+					<span>{language.review}</span>
 				</S.InfoHeader>
 				<S.InfoWrapper className={'border-wrapper-alt1'}>
 					{uploadReducer.uploadType === 'collection' && (
@@ -77,6 +78,33 @@ export default function UploadStepsChecks() {
 							<p>-</p>
 						)}
 					</S.InfoLine>
+					{/* Show per-asset traits */}
+					{uploadReducer.data.contentList.some((asset: any) => asset.traits && asset.traits.length > 0) && (
+						<>
+							<S.InfoLine>
+								<span>Metadata Traits</span>
+								<S.AssetTraitsPreview>
+									{uploadReducer.data.contentList.map((asset: any, assetIndex: number) => {
+										if (!asset.traits || asset.traits.length === 0) return null;
+
+										return (
+											<S.AssetTraitItem key={assetIndex}>
+												<S.AssetName>{asset.title || asset.file.name}</S.AssetName>
+												<S.AssetTraitsList>
+													{asset.traits.map((trait: any, traitIndex: number) => (
+														<S.TraitPreviewItem key={traitIndex}>
+															<S.TraitPreviewType>{trait.trait_type}</S.TraitPreviewType>
+															<S.TraitPreviewValue>{trait.value}</S.TraitPreviewValue>
+														</S.TraitPreviewItem>
+													))}
+												</S.AssetTraitsList>
+											</S.AssetTraitItem>
+										);
+									})}
+								</S.AssetTraitsPreview>
+							</S.InfoLine>
+						</>
+					)}
 				</S.InfoWrapper>
 				<S.InfoHeader>
 					<span>{language.assets}</span>
