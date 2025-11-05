@@ -12,13 +12,13 @@
 		"format": "eslint --fix . && npx prettier --write .",
 		"build:staging": "NODE_ENV=staging webpack",
 		"build:production": "NODE_ENV=production webpack",
-		"deploy:main": "npm run build:production && permaweb-deploy --arns-name bazar --undername studio",
+		"deploy:main": "npm run build:production && permaweb-deploy --arns-name bazar --undername studio --ttl-seconds 60",
 		"prepare": "husky install"
 	},
 	"dependencies": {
 		"@othent/kms": "^1.0.12",
 		"@permaweb/aoconnect": "0.0.85",
-		"@permaweb/libs": "0.0.66",
+		"@permaweb/libs": "0.0.68",
 		"@permaweb/stampjs": "^1.0.4",
 		"@permaweb/ucm": "0.0.12",
 		"@stripe/react-stripe-js": "^2.4.0",
