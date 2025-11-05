@@ -16,7 +16,7 @@ const productionAddresses = {
 	PROFILE_SRC: '_R2XYWDPUXVvQrQKFaQRvDTDcDwnQNbqlTd_qvCRSpQ',
 	COLLECTIONS_REGISTRY: 'Kv6jQCcs8GwNpioj6tkTt06zD130YgqIHX7QNnZQYQc',
 	COLLECTION_SRC: '2ZDuM2VUCN8WHoAKOOjiH4_7Apq0ZHKnTWdLppxCdGY',
-	ASSET_SRC: 'S_pkWJ68HXZESWC1ldr28QDTZgc7sQlwQvzGmgSQoH4',
+	ASSET_SRC: 'LlyF5s11sJIWvfNbkH-tavR-P7IJfTvkHHOdlwtGIJM',
 };
 
 const nonProductionAddresses = {
