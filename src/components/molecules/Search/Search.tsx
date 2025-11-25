@@ -37,7 +37,12 @@ export default function Search() {
 		}
 	}
 
-	checkWindowResize(handleWindowResize);
+	React.useEffect(() => {
+		checkWindowResize(handleWindowResize);
+		return () => {
+			window.removeEventListener('resize', handleWindowResize);
+		};
+	}, []);
 
 	React.useEffect(() => {
 		setTimer(

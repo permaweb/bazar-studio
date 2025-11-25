@@ -34,7 +34,12 @@ export default function Navigation() {
 		}
 	}
 
-	checkWindowResize(handleWindowResize);
+	React.useEffect(() => {
+		checkWindowResize(handleWindowResize);
+		return () => {
+			window.removeEventListener('resize', handleWindowResize);
+		};
+	}, []);
 
 	const NAV_PATHS: NavPathType[] = [
 		{ path: URLS.base, label: language.home, icon: ASSETS.landing },
