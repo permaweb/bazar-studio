@@ -189,7 +189,7 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 
 	React.useEffect(() => {
 		(async function () {
-			if (walletAddress) {
+			if (walletAddress && libs) {
 				const cachedProfile = getCachedProfile(walletAddress);
 
 				if (cachedProfile) {
@@ -201,25 +201,62 @@ export function ArweaveProvider(props: ArweaveProviderProps) {
 					setProfile(cachedProfile);
 				}
 
-				setProfile(await resolveProfile(walletAddress));
+				const resolvedProfile = await resolveProfile(walletAddress);
+				if (resolvedProfile) {
+					setProfile(resolvedProfile);
+				}
 			}
 		})();
-	}, [walletAddress]);
+	}, [walletAddress, libs]);
 
 	async function resolveProfile(address: string) {
+		if (!libs) {
+			console.warn('libs not initialized yet');
+			return null;
+		}
+
 		try {
 			let fetchedProfile: any;
 			const cachedProfile = getCachedProfile(address);
-			if (cachedProfile?.id) fetchedProfile = await libs.getProfileById(cachedProfile.id);
-			else fetchedProfile = await libs.getProfileByWalletAddress(address);
+
+			try {
+				if (cachedProfile?.id) {
+					fetchedProfile = await libs.getProfileById(cachedProfile.id);
+				} else {
+					fetchedProfile = await libs.getProfileByWalletAddress(address);
+				}
+			} catch (fetchError: any) {
+				console.error('fetchError', fetchError);
+				// If fetch fails, return cached profile if available, otherwise return null
+				if (cachedProfile) {
+					return cachedProfile;
+				}
+				return null;
+			}
+
+			if (!fetchedProfile || (typeof fetchedProfile === 'object' && Object.keys(fetchedProfile).length === 0)) {
+				// Empty or invalid profile response
+				if (cachedProfile) {
+					return cachedProfile;
+				}
+				return null;
+			}
+
 			let profileToUse = { ...fetchedProfile };
 
-			if (!fetchedProfile?.id && cachedProfile) profileToUse = cachedProfile;
-			cacheProfile(address, profileToUse);
+			if (!fetchedProfile?.id && cachedProfile) {
+				profileToUse = cachedProfile;
+			}
 
+			cacheProfile(address, profileToUse);
 			return profileToUse;
 		} catch (e: any) {
-			console.error('fetchError', e);
+			console.error('resolveProfile error', e);
+			const cachedProfile = getCachedProfile(address);
+			if (cachedProfile) {
+				return cachedProfile;
+			}
+			return null;
 		}
 	}
 

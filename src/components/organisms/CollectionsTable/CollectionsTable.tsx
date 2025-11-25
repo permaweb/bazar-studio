@@ -441,7 +441,7 @@ export default function CollectionsTable(props: {
 		(async function () {
 			loadCollections();
 		})();
-	}, [arProvider.profile?.id]);
+	}, [arProvider.profile?.id, arProvider.profile?.collections, arProvider.toggleProfileUpdate]);
 
 	function handleCollectionChange(id: string, name: string) {
 		const currentId = uploadReducer.data?.collectionId;

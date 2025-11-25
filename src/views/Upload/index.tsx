@@ -138,6 +138,9 @@ export default function Upload() {
 							);
 							console.log(`Profile update: ${profileUpdateResponse}`);
 
+							// Trigger profile refresh to load the new collection
+							arProvider.setToggleProfileUpdate(!arProvider.toggleProfileUpdate);
+
 							if (updateAssetsResponse) {
 								setResponse(`${language.collectionCreated}!`);
 								setCollectionResponseId(collectionId);
