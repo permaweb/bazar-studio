@@ -188,6 +188,13 @@ export type FileMetadataType = {
 		trait_type: string;
 		value: string;
 	}>;
+	// Ebook metadata fields
+	isbn?: string;
+	author?: string;
+	publisher?: string;
+	publicationDate?: string;
+	language?: string;
+	genre?: string;
 };
 
 export type UploadType = 'collection' | 'assets';
@@ -277,7 +284,17 @@ export type TableHeaderType = {
 	[key: string]: { width: string; align: AlignType; display: string | null };
 };
 
-export type ActiveFieldAddType = 'title' | 'description' | 'coverArt' | 'traits';
+export type ActiveFieldAddType =
+	| 'title'
+	| 'description'
+	| 'coverArt'
+	| 'traits'
+	| 'isbn'
+	| 'author'
+	| 'publisher'
+	| 'publicationDate'
+	| 'language'
+	| 'genre';
 
 export type GroupIndexType = { index: string; ids: string[] }[];
 

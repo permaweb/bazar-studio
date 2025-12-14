@@ -309,3 +309,24 @@ export const MusicNFTInfo = styled.div`
 		}
 	}
 `;
+
+export const EbookInfo = styled.div`
+	margin: 15px 0 0 0;
+	padding: 15px;
+	background: ${(props) => props.theme.colors.container.alt4.background};
+	border: 1px solid ${(props) => props.theme.colors.border.alt1};
+	border-radius: ${STYLING.dimensions.radius.primary};
+
+	span {
+		display: block;
+		color: ${(props) => props.theme.colors.font.primary};
+		font-size: ${(props) => props.theme.typography.size.xSmall};
+		font-weight: ${(props) => props.theme.typography.weight.medium};
+		line-height: 1.4;
+
+		&:first-child {
+			margin-bottom: 8px;
+			font-weight: ${(props) => props.theme.typography.weight.bold};
+		}
+	}
+`;

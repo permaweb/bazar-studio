@@ -18,6 +18,7 @@ import {
 	MAX_THUMBNAIL_IMAGE_SIZE,
 	MAX_UPLOAD_SIZE,
 } from 'helpers/config';
+import { detectEbook, validateISBN } from 'helpers/ebook';
 import { getTurboCostWincEndpoint } from 'helpers/endpoints';
 import { ActiveFieldAddType, AlignType, FileMetadataType, SequenceType } from 'helpers/types';
 import { getARAmountFromWinc, getByteSizeDisplay, stripFileExtension } from 'helpers/utils';
@@ -47,6 +48,13 @@ function FileDropdown(props: {
 	const [title, setTitle] = React.useState<string>('');
 	const [description, setDescription] = React.useState<string>('');
 	const [coverArt, setCoverArt] = React.useState<string>('');
+	const [isbn, setIsbn] = React.useState<string>('');
+	const [isbnError, setIsbnError] = React.useState<string | null>(null);
+	const [author, setAuthor] = React.useState<string>('');
+	const [publisher, setPublisher] = React.useState<string>('');
+	const [publicationDate, setPublicationDate] = React.useState<string>('');
+	const [bookLanguage, setBookLanguage] = React.useState<string>('');
+	const [genre, setGenre] = React.useState<string>('');
 
 	const fileInputRef = React.useRef<any>(null);
 
@@ -86,11 +94,29 @@ function FileDropdown(props: {
 		setTitle(props.data.title || '');
 		setDescription(props.data.description || '');
 		setCoverArt(props.data.coverArt || '');
+		setIsbn(props.data.isbn || '');
+		setAuthor(props.data.author || '');
+		setPublisher(props.data.publisher || '');
+		setPublicationDate(props.data.publicationDate || '');
+		setBookLanguage(props.data.language || '');
+		setGenre(props.data.genre || '');
+		setIsbnError(null);
 		// Reset file input when component re-renders
 		if (fileInputRef.current) {
 			fileInputRef.current.value = '';
 		}
-	}, [props.id, props.data.title, props.data.description, props.data.coverArt]);
+	}, [
+		props.id,
+		props.data.title,
+		props.data.description,
+		props.data.coverArt,
+		props.data.isbn,
+		props.data.author,
+		props.data.publisher,
+		props.data.publicationDate,
+		props.data.language,
+		props.data.genre,
+	]);
 
 	function handleCoverArtChange(e: React.ChangeEvent<HTMLInputElement>) {
 		if (e.target.files && e.target.files.length) {
@@ -266,6 +292,201 @@ function FileDropdown(props: {
 					/>
 				);
 				break;
+			case 'isbn':
+				header = 'Edit ISBN';
+				body = (
+					<FormField
+						label="ISBN (ISBN-10 or ISBN-13)"
+						value={isbn}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+							const value = e.target.value;
+							setIsbn(value);
+							if (value) {
+								const validation = validateISBN(value);
+								setIsbnError(validation.valid ? null : validation.message || 'Invalid ISBN format');
+							} else {
+								setIsbnError(null);
+							}
+						}}
+						invalid={{
+							status: !!isbnError,
+							message: isbnError,
+						}}
+						disabled={false}
+						sm
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							if (isbn) {
+								const validation = validateISBN(isbn);
+								if (validation.valid) {
+									props.handleAddField(props.data.file.name, isbn, 'isbn');
+									setActiveFieldAdd(null);
+									setOpen(false);
+								} else {
+									setIsbnError(validation.message || 'Invalid ISBN format');
+								}
+							} else {
+								props.handleAddField(props.data.file.name, '', 'isbn');
+								setActiveFieldAdd(null);
+								setOpen(false);
+							}
+						}}
+						disabled={!!isbnError}
+						noMinWidth
+					/>
+				);
+				break;
+			case 'author':
+				header = 'Edit Author';
+				body = (
+					<FormField
+						label="Author"
+						value={author}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAuthor(e.target.value)}
+						invalid={{
+							status: false,
+							message: null,
+						}}
+						disabled={false}
+						sm
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							props.handleAddField(props.data.file.name, author, 'author');
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
+			case 'publisher':
+				header = 'Edit Publisher';
+				body = (
+					<FormField
+						label="Publisher"
+						value={publisher}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPublisher(e.target.value)}
+						invalid={{
+							status: false,
+							message: null,
+						}}
+						disabled={false}
+						sm
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							props.handleAddField(props.data.file.name, publisher, 'publisher');
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
+			case 'publicationDate':
+				header = 'Edit Publication Date';
+				body = (
+					<FormField
+						type="date"
+						label="Publication Date"
+						value={publicationDate}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPublicationDate(e.target.value)}
+						invalid={{
+							status: false,
+							message: null,
+						}}
+						disabled={false}
+						sm
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							props.handleAddField(props.data.file.name, publicationDate, 'publicationDate');
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
+			case 'language':
+				header = 'Edit Language';
+				body = (
+					<FormField
+						label="Language"
+						value={bookLanguage}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBookLanguage(e.target.value)}
+						invalid={{
+							status: false,
+							message: null,
+						}}
+						disabled={false}
+						sm
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							props.handleAddField(props.data.file.name, bookLanguage, 'language');
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
+			case 'genre':
+				header = 'Edit Genre';
+				body = (
+					<FormField
+						label="Genre"
+						value={genre}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGenre(e.target.value)}
+						invalid={{
+							status: false,
+							message: null,
+						}}
+						disabled={false}
+						sm
+					/>
+				);
+				handleSave = (
+					<Button
+						type={'alt1'}
+						label={language.save}
+						handlePress={() => {
+							props.handleAddField(props.data.file.name, genre, 'genre');
+							setActiveFieldAdd(null);
+							setOpen(false);
+						}}
+						disabled={false}
+						noMinWidth
+					/>
+				);
+				break;
 		}
 
 		return (
@@ -332,6 +553,58 @@ function FileDropdown(props: {
 											{language.removeCoverArt}
 										</S.LI>
 									)}
+								</>
+							)}
+							{detectEbook(props.data) && (
+								<>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('isbn');
+										}}
+										disabled={false}
+									>
+										{props.data.isbn ? 'Edit ISBN' : 'Add ISBN'}
+									</S.LI>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('author');
+										}}
+										disabled={false}
+									>
+										{props.data.author ? 'Edit Author' : 'Add Author'}
+									</S.LI>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('publisher');
+										}}
+										disabled={false}
+									>
+										{props.data.publisher ? 'Edit Publisher' : 'Add Publisher'}
+									</S.LI>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('publicationDate');
+										}}
+										disabled={false}
+									>
+										{props.data.publicationDate ? 'Edit Publication Date' : 'Add Publication Date'}
+									</S.LI>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('language');
+										}}
+										disabled={false}
+									>
+										{props.data.language ? 'Edit Language' : 'Add Language'}
+									</S.LI>
+									<S.LI
+										onClick={() => {
+											setActiveFieldAdd('genre');
+										}}
+										disabled={false}
+									>
+										{props.data.genre ? 'Edit Genre' : 'Add Genre'}
+									</S.LI>
 								</>
 							)}
 							<S.LI
@@ -449,6 +722,12 @@ export default function UploadAssets() {
 					...(fieldType === 'description' ? { description: value } : {}),
 					...(fieldType === 'coverArt' ? { coverArt: value || undefined } : {}),
 					...(fieldType === 'traits' ? { traits: JSON.parse(value) } : {}),
+					...(fieldType === 'isbn' ? { isbn: value || undefined } : {}),
+					...(fieldType === 'author' ? { author: value || undefined } : {}),
+					...(fieldType === 'publisher' ? { publisher: value || undefined } : {}),
+					...(fieldType === 'publicationDate' ? { publicationDate: value || undefined } : {}),
+					...(fieldType === 'language' ? { language: value || undefined } : {}),
+					...(fieldType === 'genre' ? { genre: value || undefined } : {}),
 				};
 			}
 			return data;
