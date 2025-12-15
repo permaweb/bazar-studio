@@ -13,6 +13,7 @@ import {
 	REDIRECTS,
 	TAGS,
 } from 'helpers/config';
+import { detectEbook } from 'helpers/ebook';
 import { analyzeMusicNFTs, generateTrackId } from 'helpers/musicNFT';
 import { TagType, UploadType } from 'helpers/types';
 import { fileToBuffer, formatAddress, stripFileExtension } from 'helpers/utils';
@@ -121,12 +122,35 @@ export default function Upload() {
 
 							setResponse('Updating assets in collection...');
 
-							const updateAssetsResponse = await permawebProvider.libs.updateCollectionAssets({
-								collectionId: collectionId,
-								assetIds: assetIds,
+							console.log('Updating collection assets:', {
+								collectionId,
+								assetIds,
+								assetCount: assetIds.length,
 								creator: arProvider.profile.id,
-								updateType: 'Add',
 							});
+
+							try {
+								const updateAssetsResponse = await permawebProvider.libs.updateCollectionAssets({
+									collectionId: collectionId,
+									assetIds: assetIds,
+									creator: arProvider.profile.id,
+									updateType: 'Add',
+								});
+
+								console.log('Update assets response:', updateAssetsResponse);
+
+								if (updateAssetsResponse) {
+									console.log('Assets update message sent successfully. Message ID:', updateAssetsResponse);
+									console.log(
+										'Note: On legacynet, the Assets array may take time to update. Check the collection state in a few moments.'
+									);
+								} else {
+									console.warn('No response from updateCollectionAssets');
+								}
+							} catch (e: any) {
+								console.error('Error updating collection assets:', e);
+								setResponse(`Warning: Assets uploaded but collection update may have failed: ${e.message}`);
+							}
 
 							setResponse('Adding collection to profile...');
 
@@ -176,15 +200,38 @@ export default function Upload() {
 						}
 
 						if (collectionId) {
-							const updateAssetsResponse = await permawebProvider.libs.updateCollectionAssets({
-								collectionId: collectionId,
-								assetIds: assetIds,
+							console.log('Updating collection assets (assets upload):', {
+								collectionId,
+								assetIds,
+								assetCount: assetIds.length,
 								creator: arProvider.profile.id,
-								updateType: 'Add',
 							});
 
-							if (updateAssetsResponse) {
-								setResponse(`${language.collectionUpdated}!`);
+							try {
+								const updateAssetsResponse = await permawebProvider.libs.updateCollectionAssets({
+									collectionId: collectionId,
+									assetIds: assetIds,
+									creator: arProvider.profile.id,
+									updateType: 'Add',
+								});
+
+								console.log('Update assets response (assets upload):', updateAssetsResponse);
+
+								if (updateAssetsResponse) {
+									console.log('Assets update message sent successfully. Message ID:', updateAssetsResponse);
+									console.log(
+										'Note: On legacynet, the Assets array may take time to update. Check the collection state in a few moments.'
+									);
+									setResponse(`${language.collectionUpdated}!`);
+									setCollectionResponseId(collectionId);
+								} else {
+									console.warn('No response from updateCollectionAssets');
+									setResponse(`${language.collectionUpdated} (may take time to reflect on legacynet)`);
+									setCollectionResponseId(collectionId);
+								}
+							} catch (e: any) {
+								console.error('Error updating collection assets:', e);
+								setResponse(`Warning: Assets uploaded but collection update may have failed: ${e.message}`);
 								setCollectionResponseId(collectionId);
 							}
 						}
@@ -276,8 +323,30 @@ export default function Upload() {
 						}
 					}
 
-					if (uploadReducer.data.hasLicense && uploadReducer.data.license)
-						asset.tags = buildLicenseTags(uploadReducer.data.license);
+					// Add ebook metadata and tags
+					if (detectEbook(element)) {
+						// Add Bootloader-ISBN tag if ISBN is present
+						if (element.isbn) {
+							if (!asset.tags) {
+								asset.tags = [];
+							}
+							asset.tags.push({ name: 'Bootloader-ISBN', value: element.isbn });
+						}
+
+						// Add ebook metadata
+						if (element.author) asset.metadata.author = element.author;
+						if (element.publisher) asset.metadata.publisher = element.publisher;
+						if (element.publicationDate) asset.metadata.publicationDate = element.publicationDate;
+						if (element.language) asset.metadata.language = element.language;
+						if (element.genre) asset.metadata.genre = element.genre;
+					}
+
+					if (uploadReducer.data.hasLicense && uploadReducer.data.license) {
+						if (!asset.tags) {
+							asset.tags = [];
+						}
+						asset.tags = [...asset.tags, ...buildLicenseTags(uploadReducer.data.license)];
+					}
 
 					const assetId = await permawebProvider.libs.createAtomicAsset(asset, (status: string) => setResponse(status));
 

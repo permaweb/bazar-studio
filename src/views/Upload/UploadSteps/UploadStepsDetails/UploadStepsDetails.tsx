@@ -12,6 +12,7 @@ import { Modal } from 'components/molecules/Modal';
 import { CollectionsTable } from 'components/organisms/CollectionsTable';
 import { MetadataTraits } from 'components/organisms/MetadataTraits';
 import { ASSETS, DEFAULT_ASSET_TOPICS, GATEWAYS, RENDERERS } from 'helpers/config';
+import { analyzeEbooks, getEbookSuggestions } from 'helpers/ebook';
 import { analyzeMusicNFTs, getMusicNFTSuggestions } from 'helpers/musicNFT';
 import { RendererType, ValidationType } from 'helpers/types';
 import { formatRequiredField } from 'helpers/utils';
@@ -127,6 +128,44 @@ export default function UploadStepsDetails() {
 
 				// Update topic options to include music genre suggestions
 				const genreSuggestions = getMusicNFTSuggestions();
+				const allTopics = [...new Set([...DEFAULT_ASSET_TOPICS, ...genreSuggestions, ...currentTopics])];
+				setTopicOptions(allTopics);
+			}
+		}
+	}, [
+		uploadReducer.data.contentList,
+		arProvider.walletAddress,
+		uploadReducer.data.title,
+		uploadReducer.uploadType,
+		uploadReducer.data.collectionId,
+	]);
+
+	// Auto-detect ebooks and suggest topics (similar to music NFT detection)
+	React.useEffect(() => {
+		if (uploadReducer.data.contentList && uploadReducer.data.contentList.length > 0 && arProvider.walletAddress) {
+			const ebooks = analyzeEbooks(uploadReducer.data.contentList, arProvider.walletAddress, uploadReducer.data.title);
+
+			if (ebooks.length > 0) {
+				// Auto-select ebook topics if not already selected
+				const currentTopics = uploadReducer.data.topics;
+				const ebookTopics = ['Book', 'Ebook', 'ISBN'];
+
+				const missingTopics = ebookTopics.filter((topic) => !currentTopics.includes(topic));
+
+				if (missingTopics.length > 0) {
+					const newTopics = [...currentTopics, ...missingTopics];
+					dispatch(
+						uploadActions.setUpload([
+							{
+								field: 'topics',
+								data: newTopics,
+							},
+						])
+					);
+				}
+
+				// Update topic options to include ebook genre suggestions
+				const genreSuggestions = getEbookSuggestions();
 				const allTopics = [...new Set([...DEFAULT_ASSET_TOPICS, ...genreSuggestions, ...currentTopics])];
 				setTopicOptions(allTopics);
 			}
@@ -423,6 +462,33 @@ export default function UploadStepsDetails() {
 								}
 								return null;
 							})()}
+						{(() => {
+							if (
+								uploadReducer.data.contentList &&
+								uploadReducer.data.contentList.length > 0 &&
+								arProvider.walletAddress
+							) {
+								const ebooks = analyzeEbooks(
+									uploadReducer.data.contentList,
+									arProvider.walletAddress,
+									uploadReducer.data.title
+								);
+
+								if (ebooks.length > 0) {
+									const ebookTopics = ['Book', 'Ebook', 'ISBN'];
+
+									return (
+										<S.EbookInfo>
+											<span>Ebook detected! Auto-selected: {ebookTopics.join(', ')}</span>
+											<span>
+												Tip: Add ISBN number and book metadata (Author, Publisher, etc.) in the asset details section
+											</span>
+										</S.EbookInfo>
+									);
+								}
+							}
+							return null;
+						})()}
 					</S.TWrapper>
 					{/* Removed global traits - only per-asset traits are supported */}
 					<S.RWrapper>
