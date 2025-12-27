@@ -18,7 +18,7 @@
 	"dependencies": {
 		"@othent/kms": "^1.0.12",
 		"@permaweb/aoconnect": "0.0.85",
-		"@permaweb/libs": "0.0.76",
+		"@permaweb/libs": "0.0.77",
 		"@permaweb/stampjs": "^1.0.4",
 		"@permaweb/ucm": "0.0.12",
 		"@stripe/react-stripe-js": "^2.4.0",
