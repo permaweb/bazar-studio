@@ -129,8 +129,9 @@ export default function Upload() {
 								creator: arProvider.profile.id,
 							});
 
+							let updateAssetsResponse = null;
 							try {
-								const updateAssetsResponse = await permawebProvider.libs.updateCollectionAssets({
+								updateAssetsResponse = await permawebProvider.libs.updateCollectionAssets({
 									collectionId: collectionId,
 									assetIds: assetIds,
 									creator: arProvider.profile.id,
