@@ -12,7 +12,7 @@
 		"format": "eslint --fix . && npx prettier --write .",
 		"build:staging": "NODE_ENV=staging webpack",
 		"build:production": "NODE_ENV=production webpack",
-		"deploy:main": "npm run build:production && permaweb-deploy --arns-name bazar --undername studio --ttl-seconds 60",
+		"deploy:main": "npm run build:production && permaweb-deploy deploy --arns-name bazar --undername studio --ttl-seconds 60",
 		"prepare": "husky install"
 	},
 	"dependencies": {
